@@ -43,7 +43,7 @@ def fetch_and_store_api_data():
 def create_or_update_glue_job():
     glue_client = boto3.client('glue', region_name=AWS_REGION)
     #script_location = f"s3://{S3_BUCKET}/scripts/glue_job_script.py"
-    script_location = f"/dags/glue-jobs/amperon/glue_job_scripts.py"
+    script_location = f"/dags/amp/glue_job_scripts.py"
     try:
         # Create Glue Job if it doesn't exist
         glue_client.create_job(
