@@ -1,0 +1,36 @@
+# This is a Databricks asset bundle definition for sandbox.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+bundle:
+  name: sandbox
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    # The default target uses 'mode: development' to create a development copy.
+    # - Deployed resources get prefixed with '[dev my_user_name]'
+    # - Any job schedules and triggers are paused by default.
+    # See also https://docs.databricks.com/dev-tools/bundles/deployment-modes.html.
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-3464080408019755.15.azuredatabricks.net
+      root_path: /Workspace/Shared/eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com
+        #group_name: admins
+        level: CAN_MANAGE
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-1995600370367410.10.azuredatabricks.net
+      # We explicitly specify /Workspace/Users/eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com to make sure we only have a single copy.
+      root_path: /Workspace/Shared/eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      #- user_name: eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com
+      - group_name: users
+        level: CAN_MANAGE
+    run_as:
+      user_name: eromonsei.o.samson_hotmail.com#ext#@eromonseiosamsonhotmail.onmicrosoft.com

@@ -1,0 +1,2 @@
+# Make up graph viz installed -> sudo apt install graphviz
+terraform graph | dot -Tsvg > graph.svg

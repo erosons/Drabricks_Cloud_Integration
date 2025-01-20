@@ -1,0 +1,23 @@
+RowID,ShipDate,ShipMode,CustomerID,CustomerName,Segment,Category
+1,11/11/2016,Second Class,CG-12520,Claire Gute,Consumer,Furniture
+2,11/11/2016,Second Class,CG-12520,Claire Gute,Consumer,Furniture
+3,6/16/2016,Second Class,DV-13045,Darrin Van Huff,Corporate,Office Supplies
+4,10/18/2015,Standard Class,SO-20335,Sean O'Donnell,Consumer,Furniture
+5,10/18/2015,Standard Class,SO-20335,Sean O'Donnell,Consumer,Office Supplies
+6,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Consumer,Furniture
+7,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Corporate,Office Supplies
+8,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Consumer,Technology
+9,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Consumer,Office Supplies
+10,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Consumer,Office Supplies
+11,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Corporate,Furniture
+12,6/14/2014,Standard Class,BH-11710,Brosina Hoffman,Consumer,Technology
+13,4/20/2017,Second Class,AA-10480,Andrew Allen,Consumer,Office Supplies
+14,12/10/2016,Second Class,IM-15070,Irene Maddox,Consumer,Office Supplies
+15,11/26/2015,Second Class,HP-14815,Harold Pawlan,Corporate,Office Supplies
+16,11/26/2015,Second Class,HP-14815,Harold Pawlan,Consumer,Office Supplies
+17,11/18/2014,Second Class,PK-19075,Pete Kriz,Consumer,Office Supplies
+18,5/15/2014,Second Class,AG-10270,Alejandro Grove,Corporate,Office Supplies
+19,9/1/2014,Second Class,ZD-21925,Zuschuss Donatelli,Consumer,Office Supplies
+20,9/1/2014,Second Class,ZD-21925,Zuschuss Donatelli,Consumer,Technology
+21,9/1/2014,Second Class,ZD-21925,Zuschuss Donatelli,Consumer,Office Supplies
+22,12/13/2016,Standard Class,KB-16585,Ken Black,Corporate,Office Supplies

@@ -1,0 +1,75 @@
+// https://learn.microsoft.com/en-us/azure/databricks/admin/clusters/policy-definition
+{
+    "custom_tags.team": {
+      "type": "fixed",
+      "value": "product"
+    },
+    "node_type_id": {
+      "type": "allowlist",
+      "values": [
+        "Standard_L4s",
+        "Standard_L8s",
+        "Standard_L16s"
+      ],
+      "defaultValue": "Standard_L16s_v2"
+    },
+    "spark_version": {
+      "type": "regex",
+      "pattern": "15\\.[0-9]+\\.x-scala.*"
+    },
+    "num_workers": {
+      "type": "forbidden",
+      "hidden": true
+    },
+    "data_security_mode": {
+      "type": "fixed",
+      "value": "USER_ISOLATION",
+      "hidden": true
+    },
+    "driver_instance_pool_id": {
+      "type": "forbidden",
+      "hidden": true
+    },
+    "azure_attributes.spot_bid_max_price": {
+      "type": "fixed",
+      "value": -1,
+      "hidden": true
+    },
+    "cluster_type": {
+      "type": "fixed",
+      "value": "all-purpose"
+    },
+    "driver_node_type_id": {
+      "type": "fixed",
+      "value": "Standard_L16s_v2",
+      "hidden": true
+    },
+    "instance_pool_id": {
+      "type": "forbidden",
+      "hidden": true
+    },
+    "azure_attributes.availability": {
+      "type": "unlimited",
+      "defaultValue": "ON_DEMAND_AZURE"
+    },
+    "spark_conf.spark.databricks.cluster.profile": {
+      "type": "forbidden",
+      "hidden": true
+    },
+    "autoscale.min_workers": {
+      "type": "fixed",
+      "value": 1,
+      "hidden": true
+    },
+    "autotermination_minutes": {
+      "type": "fixed",
+      "value": 20,
+      "hidden": true
+    },
+    "autoscale.max_workers": {
+      "type": "range",
+      "maxValue": 25,
+      "defaultValue": 2,
+      "hidden": false
+    }
+  }
