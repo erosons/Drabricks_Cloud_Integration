@@ -1,0 +1,8 @@
+bundle.yaml
+resources/
+├── jobs.yaml          # Defines Jobs
+├── pipelines.yaml     # Defines DLT Pipelines
+environments/
+├── dev.yaml
+├── prod.yaml
+variables.yaml
