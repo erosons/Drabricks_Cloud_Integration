@@ -1,0 +1,216 @@
+# ------------------------------
+# bundle.yaml
+# ------------------------------
+bundle:
+  name: dlt_bundle_example
+  variables:
+    include: variables/defaults.yaml
+
+secrets:
+  - scope: dlt_scope
+    key: sp_client_secret
+  - scope: dlt_scope
+    key: storage_account_key
+
+targets:
+  dev:
+    workspace:
+      host: ${workspace_host_dev}
+    run_as:
+      service_principal_name: ${service_principal_dev}
+    default: true
+    variables:
+      include: variables/dev.yaml
+  prod:
+    workspace:
+      host: ${workspace_host_prod}
+    run_as:
+      service_principal_name: ${service_principal_prod}
+    variables:
+      include: variables/prod.yaml
+
+include:
+  - workflows/dlt_pipeline.yaml
+  - resources/notebooks
+  - access_control.yaml
+  - variables/defaults.yaml
+  - variables/dev.yaml
+  - variables/prod.yaml
+
+# ------------------------------
+# variables/defaults.yaml
+# ------------------------------
+workspace_host_dev: https://adb-your-dev-workspace.cloud.databricks.com
+workspace_host_prod: https://adb-your-prod-workspace.cloud.databricks.com
+
+service_principal_dev: sp-dlt-dev@databricks.com
+service_principal_prod: sp-dlt-prod@databricks.com
+
+pipeline_storage: dbfs:/pipelines/dlt_example
+pipeline_target: dlt_example
+group_name: data_engineering
+
+cluster_policy_name: default_policy
+compute_label: default
+
+# ------------------------------
+# variables/dev.yaml
+# ------------------------------
+pipeline_storage: dbfs:/pipelines/dlt_example/dev
+pipeline_target: dlt_example_dev
+group_name: data_engineering_dev
+cluster_policy_name: dev_policy
+compute_label: dev_compute
+
+# ------------------------------
+# variables/prod.yaml
+# ------------------------------
+pipeline_storage: dbfs:/pipelines/dlt_example/prod
+pipeline_target: dlt_example_prod
+group_name: data_engineering_prod
+cluster_policy_name: prod_policy
+compute_label: prod_compute
+
+# ------------------------------
+# workflows/dlt_pipeline.yaml
+# ------------------------------
+resources:
+  jobs:
+    unified_etl_job:
+      name: "Unified ETL Job - {{var.env}}"
+      tasks:
+        - task_key: bronze_task
+          notebook_task:
+            notebook_path: notebooks/bronze_ingest.py
+            base_parameters:
+              env: "{{var.env}}"
+              schema: "{{var.bronze_schema}}"
+          job_cluster_key: shared_cluster
+
+        - task_key: silver_task
+          depends_on:
+            - task_key: bronze_task
+          notebook_task:
+            notebook_path: notebooks/silver_transform.py
+            base_parameters:
+              env: "{{var.env}}"
+              schema: "{{var.silver_schema}}"
+          job_cluster_key: shared_cluster
+
+      job_clusters:
+        - job_cluster_key: shared_cluster
+          new_cluster:
+            spark_version: 13.3.x-scala2.12
+            num_workers: 2
+            policy_id: "{{var.cluster_policy_id}}"
+            
+  dlt-pipeline:
+    name: dlt_pipeline_example
+    pipeline:
+      id: dlt_pipeline_example
+      edition: CORE
+      channel: CURRENT
+      clusters:
+        - label: ${compute_label}
+          autoscale:
+            min_workers: 1
+            max_workers: 4
+          policy: ${cluster_policy_name}
+      development: true
+      libraries:
+        - notebook: ../resources/notebooks/bronze_ingest
+        - notebook: ../resources/notebooks/silver_transform
+        - notebook: ../resources/notebooks/gold_reporting
+      storage: ${pipeline_storage}
+      target: ${pipeline_target}
+      configuration:
+        spark.databricks.delta.retentionDurationCheck.enabled: "false"
+        pipelines.reset.allowed: "true"
+    permissions:
+      - group_name: ${group_name}
+        permission_level: CAN_MANAGE
+
+# ------------------------------
+# resources/notebooks/bronze_ingest.py
+# ------------------------------
+import dlt
+from pyspark.sql.functions import *
+from pyspark.dbutils import DBUtils
+
+dbutils = DBUtils(spark)
+
+# Example: using secret
+storage_key = dbutils.secrets.get(scope="dlt_scope", key="storage_account_key")
+
+# Load data (static path shown here; replace with actual usage of storage_key if needed)
+data = spark.read.format("json").load("/databricks-datasets/definitive-guide/data/flight-data/json/2015-summary.json")
+
+dlt.create_table(
+    name="bronze_flights",
+    comment="Raw flight data",
+    table_properties={
+        "quality": "bronze",
+        "delta.enableChangeDataFeed": "true",
+        "delta.deletedFileRetentionDuration": "interval 30 days"
+    }
+)
+
+@dlt.table(name="bronze_flights")
+def ingest():
+    return data
+
+# ------------------------------
+# resources/notebooks/silver_transform.py
+# ------------------------------
+import dlt
+from pyspark.sql.functions import *
+
+@dlt.table(
+    name="silver_flights",
+    table_properties={
+        "quality": "silver",
+        "delta.enableChangeDataFeed": "true",
+        "delta.deletedFileRetentionDuration": "interval 30 days"
+    }
+)
+def transform():
+    df = dlt.read("bronze_flights")
+    return df.withColumn("flight_year", year(col("date"))).filter(col("count") > 10)
+
+# ------------------------------
+# resources/notebooks/gold_reporting.py
+# ------------------------------
+import dlt
+from pyspark.sql.functions import *
+
+@dlt.table(
+    name="gold_aggregated",
+    table_properties={
+        "quality": "gold",
+        "delta.enableChangeDataFeed": "true",
+        "delta.deletedFileRetentionDuration": "interval 30 days"
+    }
+)
+def gold():
+    df = dlt.read("silver_flights")
+    return df.groupBy("DEST_COUNTRY_NAME").agg(sum("count").alias("total_flights"))
+
+# ------------------------------
+# access_control.yaml
+# ------------------------------
+access_controls:
+  - object_type: notebook
+    object_path: ../resources/notebooks/bronze_ingest
+    permissions:
+      - group_name: ${group_name}
+        permission_level: CAN_RUN
+  - object_type: notebook
+    object_path: ../resources/notebooks/silver_transform
+    permissions:
+      - group_name: ${group_name}
+        permission_level: CAN_RUN
+  - object_type: notebook
+    object_path: ../resources/notebooks/gold_reporting
+    permissions:
+      - group_name: ${group_name}
+        permission_level: CAN_RUN

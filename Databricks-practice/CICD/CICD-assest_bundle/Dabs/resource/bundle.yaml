@@ -1,0 +1,19 @@
+bundle:
+  name: full_etl_pipeline
+
+include:
+  - resources/jobs.yaml
+  - notebooks/*
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: https://<dev-workspace>
+    environment: environments/dev.yaml
+
+  prod:
+    mode: production
+    workspace:
+      host: https://<prod-workspace>
+    environment: environments/prod.yaml

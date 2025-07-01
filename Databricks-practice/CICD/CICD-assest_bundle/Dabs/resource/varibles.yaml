@@ -1,0 +1,7 @@
+variables:
+  env: dev
+  catalog: dev_catalog
+  bronze_schema: bronze_dev
+  silver_schema: silver_dev
+  gold_schema: gold_dev
+  cluster_policy_id: dev-policy

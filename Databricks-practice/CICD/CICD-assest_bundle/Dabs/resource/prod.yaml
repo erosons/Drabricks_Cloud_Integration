@@ -1,0 +1,39 @@
+resources:
+  jobs:
+    unified_etl_job:
+      name: "Unified ETL Job - {{var.env}}"
+      tasks:
+        - task_key: bronze_task
+          notebook_task:
+            notebook_path: notebooks/bronze_ingest.py
+            base_parameters:
+              env: "{{var.env}}"
+              schema: "{{var.bronze_schema}}"
+          job_cluster_key: shared_cluster
+
+        - task_key: silver_task
+          depends_on:
+            - task_key: bronze_task
+          notebook_task:
+            notebook_path: notebooks/silver_transform.py
+            base_parameters:
+              env: "{{var.env}}"
+              schema: "{{var.silver_schema}}"
+          job_cluster_key: shared_cluster
+
+      job_clusters:
+        - job_cluster_key: shared_cluster
+          new_cluster:
+            spark_version: 13.3.x-scala2.12
+            num_workers: 2
+            policy_id: "{{var.cluster_policy_id}}"
+
+  pipelines:
+    my_dlt_pipeline:
+      name: "DLT Pipeline - {{var.env}}"
+      libraries:
+        - notebook: notebooks/dlt_logic.py
+      target: "{{var.catalog}}.{{var.schema}}.dlt_table"
+      storage: "{{var.dlt_storage}}"
+      continuous: false
+      development: {{eq var.env "dev"}}
