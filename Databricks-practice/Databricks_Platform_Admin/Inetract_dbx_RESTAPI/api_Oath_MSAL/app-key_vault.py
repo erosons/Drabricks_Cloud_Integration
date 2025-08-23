@@ -60,35 +60,3 @@ def list_databricks_clusters():
     response = requests.get(f'{DATABRICKS_INSTANCE}/api/2.0/clusters/list', headers=headers)
     response.raise_for_status()
     pprint(response.json())
-
-def create_databricks_cluster(cluster_name, spark_version, node_type_id, num_workers):
-    """
-    Create a new cluster in the Databricks workspace.
-    """
-    token = get_access_token()
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
-    data = {
-        "cluster_name": cluster_name,
-        "spark_version": spark_version,
-        "node_type_id": node_type_id,
-        "num_workers": num_workers
-    }
-    response = requests.post(f'{DATABRICKS_INSTANCE}/api/2.0/clusters/create', headers=headers, json=data)
-    response.raise_for_status()
-    pprint(response.json())
-
-# Example usage
-if __name__ == '__main__':
-    # List clusters
-    list_databricks_clusters()
-
-    # Create a new cluster (replace with your configuration)
-    # create_databricks_cluster(
-    #     cluster_name="ExampleCluster",
-    #     spark_version="7.3.x-scala2.12",
-    #     node_type_id="Standard_DS3_v2",
-    #     num_workers=2
-    # )

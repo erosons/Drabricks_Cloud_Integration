@@ -9,12 +9,22 @@ class DatabricksBaseAPI:
         "Authorization": f"Bearer {TOKEN}",
         "Content-Type": "application/json"
     }
+    SERVICE_PRINCIPAL_HEADERS = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json"
+    }
+
 
     @classmethod
-    def _get(cls, endpoint):
+    def _get(cls, endpoint,service_principal=False):
         url = f"{cls.DATABRICKS_INSTANCE}{endpoint}"
         print(url)
-        response = requests.get(url, headers=cls.HEADERS)
+        response = requests.get(
+            url, 
+            headers=cls.HEADERS 
+               if not service_principal 
+                else SERVICE_PRINCIPAL_HEADERS
+                )
         response.raise_for_status()
         return response.json()
 
