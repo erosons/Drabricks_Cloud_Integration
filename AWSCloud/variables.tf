@@ -76,3 +76,16 @@ variable  "client_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "unity_catalog_metastore" {
+  description = "Boolean to create Unity Catalog Metastore"
+  type        = bool
+  default     = true
+  
+}
+
+variable "metastore_name" {
+  description = "Name of the Unity Catalog Metastore"
+  type        = string
+  default     = "my-metastore"
+}

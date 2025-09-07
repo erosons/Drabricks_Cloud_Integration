@@ -1,2 +1,0 @@
-client_id ="1555a90d-4e32-4e0a-8de0-ea21737e6e5e"
-client_secret ="dosec813525f79e13009281444219407e08a"
