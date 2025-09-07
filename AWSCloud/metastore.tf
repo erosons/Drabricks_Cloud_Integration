@@ -1,93 +1,82 @@
-# # Create Workspace root S3 bucket (DBFS root)
-# resource "aws_s3_bucket" "ms" {
-#   bucket = "dbx-metastore-${var.aws_region}-${random_string.suffix.result}"
-# }
+################################################################################
+# Unity Catalog: Metastore + Data Access + Assignment
+################################################################################
 
-# # Recommended: block public access
-# resource "aws_s3_bucket_public_access_block" "rootms" {
-#   bucket                  = aws_s3_bucket.ms.id
-#   block_public_acls       = true
-#   block_public_policy     = true
-#   ignore_public_acls      = true
-#   restrict_public_buckets = true
-# }
+# Discover all metastores (account-level)
+data "databricks_metastores" "all" {
 
-# # (Optional but recommended) Versioning & encryption
-# resource "aws_s3_bucket_versioning" "root_m" {
-#   bucket = aws_s3_bucket.ms.id
-#   versioning_configuration {
-#     status = "Enabled"
-#   }
-# }
-
-# resource "aws_s3_bucket_server_side_encryption_configuration" "root_ssem" {
-#   bucket = aws_s3_bucket.ms.id
-#   rule {
-#     apply_server_side_encryption_by_default {
-#       sse_algorithm = "AES256"
-#     }
-#   }
-# }
+    provider = databricks.mws
+}
 
 
-# # ################################################################################
-# # # Bucket policy (grant the role access) – build explicitly for clarity
-# # ################################################################################
-# # data "aws_iam_policy_document" "ms_bucket_policy" {
-# #   statement {
-# #     sid     = "UCDataAccessObjects"
-# #     effect  = "Allow"
-# #     actions = ["s3:GetObject","s3:PutObject","s3:DeleteObject"]
-# #     resources = [
-# #       "arn:aws:s3:::${aws_s3_bucket.ms.bucket}/metastore/*"
-# #     ]
-# #     principals {
-# #       type        = "AWS"
-# #       identifiers = [aws_iam_role.metastore_data_access.arn]
-# #     }
-# #   }
+# make a guaranteed-non-null map
+locals {
+  all_metastore_ids = data.databricks_metastores.all.ids != null ? data.databricks_metastores.all.ids : tomap({})
+}
 
-# #   statement {
-# #     sid     = "UCDataAccessList"
-# #     effect  = "Allow"
-# #     actions = ["s3:ListBucket","s3:GetBucketLocation"]
-# #     resources = ["arn:aws:s3:::${aws_s3_bucket.ms.bucket}"]
-# #     principals {
-# #       type        = "AWS"
-# #       identifiers = [aws_iam_role.metastore_data_access.arn]
-# #     }
-# #     condition {
-# #       test     = "StringLike"
-# #       variable = "s3:prefix"
-# #       values   = ["metastore/*"]
-# #     }
-# #   }
-# # }
+data "databricks_metastore" "detail" {
+  provider     = databricks.mws
+  for_each     = local.all_metastore_ids   # map(name -> id); never null
+  metastore_id = each.value
+}
 
 
 
-# ################################################################################
-# # Unity Catalog: Metastore + Data Access + Assignment
-# ################################################################################
-# resource "databricks_metastore" "this" {
-#   name          = "uc-metastore"
-#   storage_root  = "s3://${aws_s3_bucket.ms.bucket}/metastore"
-#   region        = var.aws_region
-#   force_destroy = false
-#   owner         = "uc admins"
-# }
+# 3) Pick the one in our target region; create only if none exists
+locals {
+  # Depending on provider version, region may be top-level or inside metastore_info
+  metastores_in_region = [
+    for name, d in data.databricks_metastore.detail :
+    d.id
+    if try(d.region, try(d.metastore_info[0].region, null)) == var.aws_region
+  ]
 
-# resource "databricks_metastore_data_access" "this" {
-#   metastore_id = databricks_metastore.this.id
-#   name         = "default-uc-storage-credential"
-#   aws_iam_role {
-#     role_arn = aws_iam_role.metastore_data_access.arn
-#   }
-#   is_default = true
-# }
+  discovered_metastore_id = try(one(local.metastores_in_region), null)
 
-# # Example: assign the metastore to a workspace
-# resource "databricks_metastore_assignment" "this" {
-#   metastore_id = databricks_metastore.this.id
-#   workspace_id = databricks_mws_workspaces.this.workspace_id
-# }
+  create_uc_metastore = var.unity_catalog_metastore && local.discovered_metastore_id == null
+}
+
+
+resource "databricks_metastore" "new" {
+  provider     = databricks.mws
+  count = local.create_uc_metastore ? 1 : 0
+  name          = var.metastore_name
+  storage_root  = "s3://${aws_s3_bucket.uc_metastore.bucket}/metastore"
+  region        = var.aws_region
+  force_destroy = true
+}
+
+
+# 4) Effective metastore id: prefer created, else discovered
+locals {
+  metastore_id = local.create_uc_metastore ? databricks_metastore.new[0].id: local.discovered_metastore_id
+}
+
+# fail fast if we still don't have an id
+resource "null_resource" "ensure_metastore" {
+  triggers = { metastore_id = local.metastore_id != null ? local.metastore_id : "MISSING" }
+  lifecycle {
+    precondition {
+      condition     = local.metastore_id != null
+      error_message = "No metastore found/created in ${var.aws_region}."
+    }
+  }
+}
+
+
+resource "databricks_metastore_data_access" "this" {
+  provider     = databricks.mws
+  metastore_id = local.metastore_id
+  name         = "assignment-${local.prefix}"
+  aws_iam_role { role_arn = databricks_mws_credentials.this.role_arn }
+  is_default   = true
+  depends_on   = [null_resource.ensure_metastore]
+}
+
+resource "databricks_metastore_assignment" "this" {
+  provider     = databricks.mws
+  metastore_id = local.metastore_id
+  workspace_id = databricks_mws_workspaces.this.workspace_id
+  depends_on   = [null_resource.ensure_metastore, databricks_metastore_data_access.this]
+}
+
