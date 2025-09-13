@@ -2,3 +2,4 @@
 AWSCloud/secret.tfvars
 AWSCloud/secrets.tfvars
 AWSCloud/workspace_module/.terraform
+AWSCloud/metastore/.terraform
