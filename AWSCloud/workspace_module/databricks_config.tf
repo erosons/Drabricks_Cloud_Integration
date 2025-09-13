@@ -20,6 +20,7 @@ resource "databricks_mws_credentials" "this" {
   provider         = databricks.mws
   credentials_name = "${local.prefix}-creds"
   role_arn         = aws_iam_role.cross_account_role.arn
+    depends_on = [time_sleep.wait_30_seconds]
 }
 
 # Mapping the Access connector/storage credential acess to S3 bucket which will be used as DBFS root

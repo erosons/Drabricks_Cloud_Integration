@@ -4,6 +4,7 @@ resource "aws_iam_role" "cross_account_role" {
   name               = "${local.prefix}-crossaccount"
   assume_role_policy = data.databricks_aws_assume_role_policy.this.json
   tags               = var.tags
+  max_session_duration = 3600
 }
 
 
@@ -69,41 +70,3 @@ resource "aws_s3_bucket_policy" "root_bucket_policy" {
   depends_on = [aws_s3_bucket_public_access_block.root]
 }
 
-
-###############################################
-# Create Workspace UC MetaStore S3 bucket
-###############################################
-# Create Workspace root S3 bucket (DBFS root)
-resource "aws_s3_bucket" "uc_metastore" {
-  bucket = "dbx-uc-metastore-${var.aws_region}-${random_string.suffix.result}"
-    lifecycle {
-    prevent_destroy = false
-  }
-  force_destroy   = true
-}
-
-# Recommended: block public access
-resource "aws_s3_bucket_public_access_block" "uc" {
-  bucket                  = aws_s3_bucket.uc_metastore.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-# (Optional but recommended) Versioning & encryption
-resource "aws_s3_bucket_versioning" "uc_metastore_v" {
-  bucket = aws_s3_bucket.uc_metastore.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "uc_metastore_sse" {
-  bucket = aws_s3_bucket.uc_metastore.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}

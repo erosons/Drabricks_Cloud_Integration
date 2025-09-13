@@ -41,7 +41,7 @@ resource "databricks_metastore" "new" {
   provider     = databricks.mws
   count = local.create_uc_metastore ? 1 : 0
   name          = var.metastore_name
-  storage_root  = "s3://${aws_s3_bucket.uc_metastore.bucket}/metastore"
+  # storage_root  = "s3://${aws_s3_bucket.uc_metastore.bucket}/metastore"
   region        = var.aws_region
   force_destroy = true
 }
@@ -70,13 +70,25 @@ resource "databricks_metastore_data_access" "this" {
   name         = "assignment-${local.prefix}"
   aws_iam_role { role_arn = databricks_mws_credentials.this.role_arn }
   is_default   = true
-  depends_on   = [null_resource.ensure_metastore]
+  depends_on   = [
+                   null_resource.ensure_metastore,
+                   databricks_mws_storage_configurations.this
+                   ]
+   # Provider sometimes flips is_default/read_only on read
+  lifecycle { 
+     ignore_changes = [is_default, read_only] 
+     }
 }
 
 resource "databricks_metastore_assignment" "this" {
   provider     = databricks.mws
   metastore_id = local.metastore_id
   workspace_id = databricks_mws_workspaces.this.workspace_id
-  depends_on   = [null_resource.ensure_metastore, databricks_metastore_data_access.this]
+
+  depends_on   = [
+        time_sleep.wait_for_workspace,
+        databricks_metastore_data_access.this,
+        null_resource.ensure_metastore
+    ]
 }
 
