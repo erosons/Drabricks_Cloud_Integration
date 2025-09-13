@@ -1,0 +1,79 @@
+@startuml
+!theme plain
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+rectangle "Root (Management Account)" as root {
+
+  folder "Security OU" {
+    rectangle "Security-Tooling Account\n- GuardDuty (admin)\n- Security Hub\n- Detective\n- IAM Analyzer\n- Config aggregator" as security_tooling
+    rectangle "Audit Account\n- Break-glass read-only\n- Org-wide CloudTrail sink\n- Config snapshots" as audit
+  }
+
+  folder "Logging OU" {
+    rectangle "Log-Archive Account\n- Immutable S3 buckets\n- CloudTrail, Config, VPC Flow, ALB/NLB logs" as logarchive
+  }
+
+  folder "Shared Services OU" {
+    rectangle "Network Account\n- TGW Hub\n- Central NAT/Egress\n- Route53 Resolver\n- Direct Connect/VPN" as network
+    rectangle "Identity Account\n- IAM Identity Center (SSO)\n- IdP Federation\n- Central KMS Keys" as identity
+  }
+
+  folder "Engineering OU" {
+    rectangle "Eng-Prod Account" as engprod
+    rectangle "Eng-UAT Account" as engu
+    rectangle "Eng-QA Account" as engq
+    rectangle "Eng-Dev Account" as engd
+
+    rectangle "CICD Account\n- CodePipeline/Build\n- OIDC deploy roles\n- Artifact repos (ECR, S3)" as cicd
+    rectangle "Data-Platform Account\n- Databricks E2 Control\n- EMR\n- Glue Catalog\n- Lake Formation" as dataplat
+  }
+
+  folder "MLOps OU" {
+    rectangle "MOPS-Prod Account" as mprod
+    rectangle "MOPS-UAT Account" as muat
+    rectangle "MOPS-QA Account" as mqa
+    rectangle "MOPS-Dev Account" as mdev
+  }
+}
+
+' =============================
+' EXTERNAL SOURCE CONTROL / IaC
+' =============================
+cloud "Git Repos\n(GitHub/GitLab/CodeCommit)\n- App & Notebook Code\n- Databricks Assets Bundles (DABs)\n- Workflows" as git
+
+cloud "Terraform Repos\n(IaC Modules/Stacks)\n- Accounts/OUs\n- Network/VPC\n- Databricks/EMR/Glue\n- Lake Formation" as tfrepo
+
+' Place Terraform to the side for clarity
+tfrepo -[hidden]-> "MLOps OU" 
+git -[hidden]-> "Engineering OU"
+
+'================
+' Relationships
+'=================
+
+"Security OU"--> logarchive : Send findings/logs
+"Security OU" --> "Engineering OU"
+"Security OU" --> "MLOps OU"
+"Shared Services OU" --> "MLOps OU": SSO / IAM roles
+"Shared Services OU" --> "Engineering OU": SSO / IAM roles
+"Engineering OU" -->  "Logging OU"
+"MLOps OU" --> "Logging OU"
+
+git -->"MLOps OU"
+git --> "Engineering OU"
+
+tfrepo --> "MLOps OU"
+tfrepo --> "Engineering OU"
+
+tfrepo --> "Security OU"
+tfrepo--> "Shared Services OU"
+
+
+'===========
+'LEGEND
+'==========
+@enduml
