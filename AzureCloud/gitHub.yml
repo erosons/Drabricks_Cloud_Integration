@@ -1,0 +1,71 @@
+GitHub Actions (OIDC as UAMI)
+
+The only “credential” you give Actions is the UAMI’s Client ID (and tenant/sub).
+The federated credential you created on the UAMI handles the trust.
+
+name: Deploy (Databricks via UAMI OIDC)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        required: true
+        description: "Must match the OIDC subject target (e.g. 'prod')"
+
+permissions:
+  id-token: write   # REQUIRED for OIDC
+  contents: read
+
+env:
+  AZURE_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  # IMPORTANT: this is the UAMI's **client_id**
+  AZURE_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+  DATABRICKS_HOST:       ${{ vars.DATABRICKS_HOST }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login as UAMI (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id:       ${{ env.AZURE_CLIENT_ID }}       # UAMI client_id
+          tenant-id:       ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AAD token for Azure Databricks
+        id: aadtoken
+        run: |
+          # Databricks resource (AAD app) ID
+          DATABRICKS_AUDIENCE="2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+          TOKEN=$(az account get-access-token --resource $DATABRICKS_AUDIENCE --query accessToken -o tsv)
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Install Databricks CLI
+        run: |
+          pipx install databricks-cli==0.220.0 || pip install databricks-cli==0.220.0
+
+      - name: Test Databricks call
+        env:
+          DATABRICKS_HOST:  ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ steps.aadtoken.outputs.token }}
+        run: |
+          databricks workspace ls /
+
+      # Optional: Bundles
+      - name: Install Bundles tools
+        run: |
+          pip install databricks-sdk==0.31.0 databricks-bundles==0.3.10
+
+      - name: Deploy bundle
+        env:
+          DATABRICKS_HOST:  ${{ env.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ steps.aadtoken.outputs.token }}
+        run: |
+          databricks bundle deploy -t ${{ inputs.environment }} --bundle-file ./databricks.yml

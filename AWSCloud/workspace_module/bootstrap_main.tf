@@ -31,16 +31,16 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
   }
 }
 
-resource "aws_dynamodb_table" "tf_lock" {
-  name         = var.dynamodb_table_name
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
+# resource "aws_dynamodb_table" "tf_lock" {
+#   name         = var.dynamodb_table_name
+#   billing_mode = "PAY_PER_REQUEST"
+#   hash_key     = "LockID"
 
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-}
+#   attribute {
+#     name = "LockID"
+#     type = "S"
+#   }
+# }
 #-------------Boortstrap ends here this used to to map s3 backend by adding this backend  in Remote_backend.tf-----------------
 
 
