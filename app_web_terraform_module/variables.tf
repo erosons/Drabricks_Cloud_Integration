@@ -56,19 +56,3 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
-
-# ###########################################################
-# # Defining sensitive variables for database credentials
-# ###########################################################
-
-# variable "db_user" {
-#   description = "Database username"
-#   type        = string
-#   sensitive = true
-  
-# }
-# variable "db_password" {
-#   description = "Database password"
-#   type        = string
-#   sensitive = true
-# }

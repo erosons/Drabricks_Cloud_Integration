@@ -41,11 +41,6 @@ variable "tags" {
   default     = {}
 }
 
-# Stage 2 (workspace-level) variables you'll set AFTER the workspace is created
-variable "databricks_account_id" {
-  description = "Account Id that could be found in the top right corner of https://accounts.cloud.databricks.com/"
-}
-
 # optional: if you prefer using AWS named profile
 variable "network_prefix" {
   description = "AWS named profile"
@@ -88,4 +83,10 @@ variable "metastore_name" {
   description = "Name of the Unity Catalog Metastore"
   type        = string
   default     = "my-metastore"
+}
+
+variable "databricks_account_id" {
+  description = "Your Databricks Account ID (from the Account Console)"
+  type        = string
+  
 }
