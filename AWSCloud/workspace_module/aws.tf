@@ -1,4 +1,13 @@
 
+# 1) Register VPCEs with Databricks
+resource "databricks_mws_vpc_endpoint" "frontend" {
+  account_id       = var.account_id
+  aws_vpc_endpoint_id = var.vpce_id_frontend
+  region           = var.aws_region
+  name             = "${var.name_prefix}-frontend"
+}
+
+
 # Configure Cross -account IAM role using Databricks-genrated STS assume role policy
 resource "aws_iam_role" "cross_account_role" {
   name               = "${local.prefix}-crossaccount"

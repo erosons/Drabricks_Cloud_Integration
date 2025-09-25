@@ -90,3 +90,49 @@ variable "databricks_account_id" {
   type        = string
   
 }
+
+variable "vpce_id_frontend"            { type = string }
+variable "vpce_id_backend_workspace"    { type = string }
+variable "vpce_id_backend_scc"          { type = string }
+
+variable "workspace_vpc_id"            { type = string }
+variable "workspace_subnet_ids"        { type = list(string) }
+variable "workspace_security_group_id" { type = string }
+
+variable "private_access_public_enabled" { 
+  type = bool   
+  default = false 
+  } # block public
+
+
+
+# variable "aws_region"            { default = "us-east-1" }
+# variable "databricks_account_id" { type = string }
+
+# # Get these per-region from Databricks' "PrivateLink VPC endpoint services" table
+# # (workspace front-end/back-end) and SCC relay service names:
+# variable "svc_name_workspace" {
+#   type = string
+#   # example (placeholder!): "com.amazonaws.vpce.us-east-1.vpce-svc-xxxxxxxx"
+# }
+# variable "svc_name_scc_relay" {
+#   type = string
+#   # example (placeholder!): "com.amazonaws.vpce.us-east-1.vpce-svc-yyyyyyyy"
+# }
+
+
+# Sanity checklist (AWS)
+
+# Ports / SGs: Allow 443 (REST, web), 6666 (SCC relay), and 8443–8451 internally as per Databricks’ guidance. 
+# Databricks Documentation
+
+# Back-end: Two VPCEs in the workspace VPC (Workspace + SCC relay), register both, reference them in the network config. 
+# Databricks Documentation
+
+# Front-end: One VPCE in the transit VPC, register it, and attach PAS to the workspace. Then Route 53 A + CNAME records as shown. 
+# Databricks Documentation
+
+# Enforcement: In PAS set public_access_enabled = false to force front-end over PrivateLink only. 
+# Databricks Documentation
+
+# Customer-managed VPC + SCC enabled are prerequisites.
