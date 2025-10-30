@@ -16,3 +16,4 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+AzureCloud/workspaces_deployment/terraform.tfstate
