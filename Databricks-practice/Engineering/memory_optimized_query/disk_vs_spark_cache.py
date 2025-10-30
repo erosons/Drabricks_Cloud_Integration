@@ -22,47 +22,8 @@ data = spark.read.csv("/path/to/large_dataset.csv", header=True, inferSchema=Tru
 
 # Cache the DataFrame to Disk
 data.persist(pyspark.StorageLevel.DISK_ONLY)
+data.cache()
 
 # Perform some transformations and actions
 transformed_data = data.filter(data["column"] > 0)
-result = transformed_data.groupBy("column").count().collect()
-
-# Show results
-print(result)
-
-# Stop Spark Session
-spark.stop()
-
-
-
-
-# Spark Cache (In-Memory):
-
-# Spark Cache allows you to store the DataFrame in memory. 
-# This is faster than Disk Cache for iterative operations.
-#Example: Training machine learning models that require multiple passes over the same dataset.
-
-# Import necessary libraries  (use Delta Cached Accelerated Compute)
-from pyspark.sql import SparkSession
-
-# Initialize Spark Session
-spark = SparkSession.builder \
-    .appName("DiskCacheExample") \
-    .getOrCreate()
-
-# Load data into DataFrame
-data = spark.read.csv("/path/to/large_dataset.csv", header=True, inferSchema=True)
-
-# Cache the DataFrame to Disk
-data.persist(pyspark.StorageLevel.DISK_ONLY)
-
-# Perform some transformations and actions
-transformed_data = data.filter(data["column"] > 0)
-result = transformed_data.groupBy("column").count().collect()
-
-# Show results
-print(result)
-
-# Stop Spark Session
-spark.stop()
-
+result = transformed_data.groupBy("column")

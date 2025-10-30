@@ -46,6 +46,8 @@ def dataframe_events():
 
 
 delta_table = DeltaTable.forPath(spark, "s3://extertables-loc/project1/")
+deltaTable = DeltaTable.forName(spark, "table_name")
+
 
 print(f'returns delta object ,{delta_table}')
 print(f'this delta object is can used just a regular dataframe')

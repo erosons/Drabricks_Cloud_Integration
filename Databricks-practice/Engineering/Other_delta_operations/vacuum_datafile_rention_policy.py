@@ -22,7 +22,14 @@ VACUUM might leave behind empty directories after removing all files from within
 
 SET this global parameter retention period check 
 
->>> ALTER TABLE table_name SET TBLPROPERTIES ('delta.deletedFileRetentionDuration' = '30 days');
+ALTER TABLE table_name SET TBLPROPERTIES (
+    'delta.deletedFileRetentionDuration' = '30 days',
+    'delta.enableVacuumRetentionDurationCheck' = 'true',
+    'delta.autoCompact.enabled' = 'true',
+    'delta.minReaderVersion' = '2',
+    'delta.minWriterVersion' = '2',
+    'delta.enableChangeDataFeed' = 'true',
+    );
 spark.conf.set('spark.databricks.delta.retentionDurationCheck.enabled') returns True
 
 # But when you need to do immediate clean up  but not advised.

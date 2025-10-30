@@ -1,0 +1,57 @@
+{
+  "name": "Dbx container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {
+      "USERNAME": "vscode",
+      "DEBIAN_FRONTEND": "noninteractive"
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/hspaans/devcontainer-features/pytest:2": {},
+    "ghcr.io/devcontainers-extra/features/black:2": {},
+    "ghcr.io/devcontainers-extra/features/flake8:2": {},
+    "ghcr.io/devcontainers-extra/features/poetry:2": {}
+  },
+  "runArgs": [
+    "--env",
+    "CUDA_VISIBLE_DEVICES=-1",
+    "--env", "DBX_CLUSTER_ID=1028-032656-mbp7bggz",
+     "--env",
+    "TF_CPP_MIN_LOG_LEVEL=2",
+    "--env",
+    "TF_ENABLE_ONEDNN_OPTS=0" // optional: avoids rare CPU segfaults
+    // "--env", "TF_XLA_FLAGS=--xla_gpu_cuda_data_dir="
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "charliermarsh.ruff",
+        "streetsidesoftware.code-spell-checker",
+        "tamasfe.even-better-toml",
+        "hediet.vscode-drawio",
+		"databricks.databricks"
+      ],
+    "settings": {
+		
+		"terminal.integrated.shell.linux": "/bin/bash"
+	          }
+     }
+  },
+  "forwardPorts": [
+    5000
+  ],
+  "postCreateCommand": "pip install databricks-sdk databricks-connect==16.1.6",
+//   "mounts": [
+//     "source=${localEnv:HOME}/.cache/pypoetry,target=/home/vscode/.cache/pypoetry,type=bind",
+//     "source=${localEnv:HOME}/.cache/pip,target=/home/vscode/.cache/pip,type=bind"
+//   ],
+  "remoteUser": "vscode"
+}

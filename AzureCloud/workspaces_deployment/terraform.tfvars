@@ -2,7 +2,7 @@
 resource_group          = "samson-databricks-rg"
 region                  = "East US"
 workspace_name          = "samson-databricks-wk-sbx"
-subscription_id         = ""
+subscription_id         = "6e1da7fe-65f5-48b0-b3e4-9b1f59266f1e"
 dbx_access_connetor     = "samson-access-connector-sbx"
 secret_scope_name       = "samson-databricks-secret-scope"
 storage_account_name    = "samstorage"

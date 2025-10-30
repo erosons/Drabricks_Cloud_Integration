@@ -85,7 +85,7 @@ resource "databricks_mws_networks" "this" {
   network_name       = "${var.network_prefix}-network"
   vpc_id             = var.vpc_id
   subnet_ids         = var.subnets_private_ids
-  security_group_ids = [var.security_group_ids]
+  security_group_ids = var.security_group_ids
   private_access_settings_id = databricks_mws_private_access_settings.pas.private_access_settings_id
   pricing_tier      = "ENTERPRISE"
 }

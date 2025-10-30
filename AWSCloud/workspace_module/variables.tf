@@ -58,8 +58,15 @@ variable "subnets_private_ids" {
   type        = list(string)
 }
 variable "security_group_ids" {
-  description = "Security group ID to attach to the Databricks workspace"
+  description = "Security group IDs to attach to the Databricks workspace"
+  type        = list(string)
+  default     = []
+}
+
+variable "environment" {
+  description = "Deployment environment (e.g., dev, test, prod)"
   type        = string
+  default     = "dev"
 }
 
 variable  "client_id" {
@@ -103,6 +110,14 @@ variable "private_access_public_enabled" {
   type = bool   
   default = false 
   } # block public
+
+
+// Optional generic name that other resources may reference
+variable "name" {
+  description = "Optional name to apply to created resources"
+  type        = string
+  default     = null
+}
 
 
 

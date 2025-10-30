@@ -97,8 +97,9 @@ module "dbx_workspace" {
     databricks_account_id         = var.databricks_account_id
     vpc_id                        = "vpc-0f80ef0a48b036fe8"
     network_prefix                = "dbx-network-${each.key}"
-    subnets_private_ids           = ["subnet-0f0beef3de5e7fa66","subnet-058abd6ad47cdfe3c"]
-    security_group_ids            = "sg-0c04dbd290b14cf7c"
+  subnets_private_ids           = ["subnet-0f0beef3de5e7fa66","subnet-058abd6ad47cdfe3c"]
+  security_group_ids            = ["sg-0c04dbd290b14cf7c"]
+  name                          = "dbx-workspace-${each.key}"
     client_id                     = var.client_id
     client_secret                 = var.client_secret
     //aad_groups              = ["account_unity_admin", "data_engineer", "data_analyst", "data_scientist"]

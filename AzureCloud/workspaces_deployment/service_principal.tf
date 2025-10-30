@@ -1,6 +1,5 @@
 # 1. Register App in AAD
 
-
 data "azuread_client_config" "current" {}
 
 resource "azuread_application_registration" "this" {

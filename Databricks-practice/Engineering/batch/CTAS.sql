@@ -38,7 +38,8 @@ CREATE OR REPLACE TABLE purchase_dates (
   orderID STRING, 
   orderdate STRING,
   Shipdate DATE GENERATED ALWAYS AS (  auto genrateion
-    try_cast(to_date(orderdate, 'M/d/yyyy') AS DATE))
+    try_cast(to_date(orderdate, 'M/d/yyyy') AS DATE)
+    )
     COMMENT "generated based on `transactions_timestamp` column"
 );
 

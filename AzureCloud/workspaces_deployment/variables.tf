@@ -68,24 +68,3 @@ variable "storage_account_name" {
   type        = string
 }
 
-variable "vnet_id"            { 
-  type = string 
-  }
-
-variable "public_subnet_name" {
-   type = string
-    }
-variable "private_subnet_name"{
-   type = string 
-   }
-
-# Lock to private only & enforce SCC (No Public IP)
-variable "public_network_access_enabled" {
-  type    = bool
-  default = false
-}
-
-variable "network_security_group_rules_required" {
-  type    = string
-  default = "NoAzureDatabricksRules"
-}
