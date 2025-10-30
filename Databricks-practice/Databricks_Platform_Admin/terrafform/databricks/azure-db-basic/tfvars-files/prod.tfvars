@@ -1,5 +1,0 @@
-resource_group_name        = "my-prod-rg"
-location                   = "East US"
-databricks_workspace_name  = "prod-databricks-workspace"
-storage_account_name       = "prodstorageacct"
-container_name             = "prod-container"
