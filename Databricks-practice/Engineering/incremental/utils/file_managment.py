@@ -28,20 +28,20 @@ class metadataColumns(Enum):
     SOURCE_SYSTEM = 'source_system'
 
 
-class ProcesTime(Enum):
+class ProcesTime:
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
     @staticmethod
-    def total_minutes(self) -> Optional[float]:
-        if self.start_time and self.end_time:
+    def total_minutes(start_time: datetime, end_time: datetime) -> Optional[float]:
+        if start_time and end_time:
             return self.duration_in_seconds/ 60
         return None
     
     @staticmethod
-    def duration_in_seconds(self) -> Optional[float]:
-        if self.start_time and self.end_time:
-            duration = (self.end_time - self.start_time).total_seconds()
+    def duration_in_seconds(start_time: datetime, end_time: datetime) -> Optional[float]:
+        if start_time and end_time:
+            duration = (end_time - start_time)
             return duration
         return None
 

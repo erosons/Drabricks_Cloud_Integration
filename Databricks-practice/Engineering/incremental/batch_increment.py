@@ -70,7 +70,7 @@ class IncrementalLoader:
                         TBLPROPERTIES (
                             'delta.autoOptimize.optimizeWrite' = 'true',
                             'delta.autoOptimize.autoCompact' = 'true'
-                            'delt.enableDeletionVectors' = 'true'
+                            'delta.enableDeletionVectors' = 'true'
                             );
                         """
                     )

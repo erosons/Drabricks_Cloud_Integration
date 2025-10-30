@@ -1,0 +1,15 @@
+# The main pipeline for test
+
+resources:
+  pipelines:
+    test_etl:
+      name: test_etl
+      ## Catalog is required for serverless compute
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      root_path: "."
+
+      libraries:
+        - glob:
+            include: transformations/**
