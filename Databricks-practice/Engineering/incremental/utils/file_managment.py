@@ -1,25 +1,26 @@
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional
+from enum import Enum
 
 
 
-class FileFormat:
-    CSV = 'csv'
+class FileFormat(Enum):
+    CSV = 'CSV'
     JSON = 'json'
     PARQUET = 'parquet'
     DELTA = 'delta'
 
-class LoadType:
+class LoadType(Enum):
     FULL = 'full'
     INCREMENTAL = 'incremental'
 
-class StorageType:
+class StorageType(Enum):
     ADLS = 'adls'
     S3 = 's3'
     GCS = 'gcs'
 
-class metadataColumns:
+class metadataColumns(Enum):
     CREATED_DATE = 'created_date'
     UPDATED_DATE = 'updated_date'
     SOURCE_FILE = 'source_file'
@@ -27,7 +28,7 @@ class metadataColumns:
     SOURCE_SYSTEM = 'source_system'
 
 
-class ProcesTime:
+class ProcesTime(Enum):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
