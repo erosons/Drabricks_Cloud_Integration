@@ -4,8 +4,10 @@
 As files are discovered, their metadata is persisted in a scalable key-value store (RocksDB) in the checkpoint location of your Auto Loader pipeline. This key-value store ensures that data is processed exactly once.
 
 In case of failures, Auto Loader can resume from where it left off by information stored in the checkpoint location and continue to provide exactly-once guarantees when writing data into Delta Lake. 
-
-# TYPES OF AUTO LOADER
+### AUTOLOADER
+ - Can be managed through declarative Pipelines manages checkpoint for you
+ - Managed from Direct notebook with .start() /via a scheduled Job , you will managed Checkpoint
+### TYPES OF AUTO LOADER
  Directory List: 
     - Identify new files by listing the input directory.Directory listing modes allows you to quickly start Auto Loader without permission configurations other than access to your data on AWS s3, suitable for scenario where only fe files need to be streamed in on regular basis. default in 7.2 runtime an dabove
 

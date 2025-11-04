@@ -8,7 +8,9 @@
 
 import sys
 
-sys.path.append('/Workspace/Users/Drabricks_Cloud_Integration/Databricks-practice/Engineering/incremental/utils')
+import sys
+
+sys.path.append('/Workspace/Users/Drabricks_Cloud_Integration/Databricks-practice/Engineering/utils')
 
 # COMMAND ----------
 
@@ -115,8 +117,4 @@ def main():
     )
 if __name__ == "__main__":
     main()
-
-
-# COMMAND ----------
-
 

@@ -69,6 +69,7 @@ streamdf. \
     .option("checkpointLocation", "s3://extertables-loc/cloudfiles/checkpoint") \
     .option("path", "s3://extertables-loc/cloudfiles/stream") \
     .trigger(once=True) \
+    .ToTable("cloudfiles_streaming")
     .start()
 
 #Reading the delta Files
@@ -111,6 +112,8 @@ streamdf. \
     .option("checkpointLocation", "s3://extertables-loc/cloudfiles/checkpoint") \
     .option("path", "s3://extertables-loc/cloudfiles/stream") \
     .trigger(once=True) \
+    .ToTable("cloudfiles_streaming") \
+    .mergeSchema()
     .start()
 
 # Creating the Delta Table if not exists else skipp
