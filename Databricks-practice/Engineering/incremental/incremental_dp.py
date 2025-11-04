@@ -59,6 +59,7 @@ def load_incremental_data():
         spark.readStream.format("cloudFiles")
         .option("cloudFiles.format", "csv")
         .option("cloudFiles.useNotifications", "true") 
+        .options("cloudFiles.useManagedFileEvents", True)
         .option("header", "true")
         .option("cloudFiles.schemaEvolutionMode","addNewColumns")   # evolve schema
         .option("rescuedDataColumn","_rescue")                      # keep bad columns
