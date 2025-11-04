@@ -15,7 +15,13 @@
     "ghcr.io/hspaans/devcontainer-features/pytest:2": {},
     "ghcr.io/devcontainers-extra/features/black:2": {},
     "ghcr.io/devcontainers-extra/features/flake8:2": {},
-    "ghcr.io/devcontainers-extra/features/poetry:2": {}
+    "ghcr.io/devcontainers-extra/features/poetry:2": {},
+    "ghcr.io/devcontainers/features/terraform": {
+      "version": "1.5.7"
+    },
+    "ghcr.io/devcontainers/features/azure-cli": {
+      "version": "latest"
+    }
   },
   "runArgs": [
     "--env",
