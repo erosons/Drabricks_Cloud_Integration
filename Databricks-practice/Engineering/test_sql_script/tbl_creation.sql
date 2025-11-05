@@ -1,7 +1,8 @@
 -- -----------------------------------------------------
 -- Table northwind.customers
 -- -----------------------------------------------------
-use catalog main;
+
+use catalog mysandbox;
 use dl_northwind;
 CREATE TABLE IF NOT EXISTS dl_northwind.customer_region1
 (

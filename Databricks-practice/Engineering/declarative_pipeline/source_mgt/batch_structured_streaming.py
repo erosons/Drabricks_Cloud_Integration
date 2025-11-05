@@ -14,7 +14,7 @@ from Utilities.file_parser import (
 )
 
 # --------- CONFIG ----------
-files_source_path = "abfss://samson-databricks-container-8@samstorage8.dfs.core.windows.net/staging_zone"
+files_source_path = "s3://s3-demo-nvirgin001/landing_zone"
 
 
 # If you use these enums in your codebase, keep them; otherwise replace with strings.

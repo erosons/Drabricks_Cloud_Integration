@@ -1,0 +1,8 @@
+rules:
+  rule_1: "id IS NOT NULL"
+  rule_2: "last_name IS NOT NULL"
+  rule_3: "first_name IS NOT NULL"
+
+drop_rules:
+  rule_4: "attachments IS NOT NULL"
+
