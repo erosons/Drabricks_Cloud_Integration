@@ -1,0 +1,73 @@
+{
+  "name": "job_<domain>_pipeline",
+  // "max_concurrent_runs": 1,   Uncommeent to use defined compute or use severless
+  // "job_clusters": [
+  //   {
+  //     "job_cluster_key": "c-small",
+  //     "new_cluster": {
+  //       "spark_version": "16.4.x-scala2.12",
+  //       "node_type_id": "auto",
+  //       "autoscale": { "min_workers": 1, "max_workers": 1 },
+  //       "data_security_mode": "SINGLE_USER"
+  //     }
+  //   }
+  // ],
+  "parameters": [
+    { "name": "target_catalog", "default": "main" },
+    { "name": "target_schema",  "default": "bsg_<domain>" },
+    { "name": "ingest_path", "default": "abfss://.../landing/<domain>" },
+    { "name": "domain", "default": "card_services" }
+  ],
+  "tasks": [
+    {
+      "task_key": "run_dlt",
+      "pipeline_task": {
+        "pipeline_id": "${DATABRICKS_PIPELINE_ID}",
+        "full_refresh": false
+      }
+    },
+    {
+      "task_key": "apply_grants",
+      "depends_on": [{ "task_key": "run_dlt" }],
+      "sql_task": {
+        "warehouse_id": "${DATABRICKS_WAREHOUSE_ID}",
+        "query": {
+          "query_text": "USE CATALOG ${target_catalog}; USE SCHEMA ${target_schema};\n--#include file\n-- domains/<domain>/dlt/grants.sql"
+        },
+        "parameters": [
+          { "name": "target_catalog", "value": "${target_catalog}" },
+          { "name": "target_schema",  "value": "${target_schema}" }
+        ]
+      }
+    },
+    {
+      "task_key": "notify_external",
+      "depends_on": [{ "task_key": "apply_grants" }],
+      "webhook_notifications": {},
+      "spark_python_task": {
+        "python_file": "/Workspace/Repos/${workspace_repo}/ops/metrics_notebook.py",
+        "parameters": ["--notify_only"]
+      },
+      "job_cluster_key": "c-small"
+    },
+    {
+      "task_key": "write_metrics",
+      "depends_on": [{ "task_key": "notify_external" }],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Repos/${workspace_repo}/ops/metrics_notebook.py",
+        "base_parameters": {
+          "target_catalog": "${target_catalog}",
+          "target_schema": "${target_schema}",
+          "domain": "<domain>"
+        }
+      },
+      "job_cluster_key": "c-small"
+    }
+  ],
+  "schedule": {
+    "quartz_cron_expression": "0 0/30 * * * ?",
+    "timezone_id": "UTC",
+    "pause_status": "UNPAUSED"
+  },
+  "email_notifications": { "no_alert_for_skipped_runs": true }
+}

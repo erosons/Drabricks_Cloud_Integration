@@ -1,0 +1,79 @@
+# .github/workflows/deploy.yml
+name: Deploy Databricks Pipeline & Job
+on:
+  workflow_dispatch:
+    inputs:
+      domain: { required: true, type: string }
+      catalog: { default: "main", type: string }
+      schema:  { default: "bsg_${{ github.event.inputs.domain }}", type: string }
+      ingest_path: { required: true, type: string }
+      warehouse_id: { required: true, type: string }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install databricks-sdk flask
+      - name: Upsert DLT
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          WORKSPACE_REPO:  ${{ secrets.WORKSPACE_REPO }}
+        run: |
+          python - <<'PY'
+          from databricks.sdk import WorkspaceClient
+          import os, sys
+          w = WorkspaceClient()
+          domain = "${{ github.event.inputs.domain }}"
+          pipeline_name = f"dlt_{domain}"
+          tables_path = f"/Repos/{os.environ['WORKSPACE_REPO']}/domains/{domain}/dlt/tables.py"
+          storage = f"/Volumes/${{ github.event.inputs.catalog }}/${{ github.event.inputs.schema }}/_pipelines/dlt_{domain}"
+          exists = [p for p in w.pipelines.list_pipelines() if p.name == pipeline_name]
+          cfg = {
+              "ingest_path": "${{ github.event.inputs.ingest_path }}",
+              "target_catalog": "${{ github.event.inputs.catalog }}",
+              "target_schema": "${{ github.event.inputs.schema }}"
+          }
+          if exists:
+              w.pipelines.edit(pipeline_id=exists[0].pipeline_id, name=pipeline_name,
+                               libraries=[{"notebook":{"path": tables_path}}],
+                               storage=storage, configuration=cfg)
+              print("Updated pipeline:", exists[0].pipeline_id)
+          else:
+              created = w.pipelines.create(name=pipeline_name,
+                               libraries=[{"notebook":{"path": tables_path}}],
+                               storage=storage, configuration=cfg)
+              print("Created pipeline:", created.pipeline_id)
+          PY
+      - name: Upsert Job
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          pip install jq
+          python - <<'PY'
+          import json, os
+          from databricks.sdk import WorkspaceClient
+          w = WorkspaceClient()
+          domain = "${{ github.event.inputs.domain }}"
+          name = f"job_{domain}_pipeline"
+          job = json.load(open("workflows/workflow.json"))
+          for t in job["tasks"]:
+            if "pipeline_task" in t:
+              # look up pipeline id by name
+              pid = [p.pipeline_id for p in w.pipelines.list_pipelines() if p.name == f"dlt_{domain}"][0]
+              t["pipeline_task"]["pipeline_id"] = pid
+            if "sql_task" in t:
+              t["sql_task"]["warehouse_id"] = "${{ github.event.inputs.warehouse_id }}"
+          jobs = w.jobs.list(name=name)
+          job["name"] = name
+          if jobs:
+            w.jobs.reset(job_id=jobs[0].job_id, new_settings=job)
+            print("Updated job:", jobs[0].job_id)
+          else:
+            created = w.jobs.create(**job)
+            print("Created job:", created.job_id)
+          PY

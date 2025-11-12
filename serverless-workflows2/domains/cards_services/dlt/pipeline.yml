@@ -1,0 +1,36 @@
+# domains/<domain>/dlt/pipeline.yml
+name: dlt_<domain>
+edition: CORE
+photon: true
+channel: CURRENT
+
+# Attach to a job/UC policy cluster, or remove line 8-17 to use serverless if available
+clusters:
+  - label: "default"
+    autoscale:
+      min_workers: 1
+      max_workers: 1
+      mode: ENHANCED
+    spark_version: "16.4.x-scala2.12"
+    node_type_id: "auto"
+    data_security_mode: "SINGLE_USER"   # or USER_ISOLATION for multi-user
+    runtime_engine: "STANDARD"
+
+libraries:
+  - notebook: /Repos/${workspace_repo}/domains/<domain>/dlt/tables.py
+
+configuration:
+  ingest_path: ${INGEST_PATH}                       # e.g., abfss://.../landing/<domain>
+  target_catalog: ${TARGET_CATALOG}                 # e.g., main
+  target_schema: ${TARGET_SCHEMA}                   # e.g., bronze_silver_gold
+  pipelines.useSSL: "true"
+  pipelines.enforceSchema: "true"
+  cloudFiles.schemaEvolutionMode: "rescue"
+  streaming.mode: "triggered"                       # "continuous" for hard real-time
+
+# Stream every N seconds OR omit trigger & use Workflow schedule to run as batch
+trigger:
+  interval: "10 seconds"
+
+# Store checkpoints in UC Volumes or workspace storage
+storage: /Volumes/${TARGET_CATALOG}/${TARGET_SCHEMA}/_pipelines/dlt_<domain>
