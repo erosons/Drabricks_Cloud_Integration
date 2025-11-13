@@ -1,0 +1,64 @@
+name: Deploy to Databricks via OIDC
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write     # REQUIRED for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST:  ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}   # UUID
+      # DATABRICKS_BUNDLE_ENV: prod                      # optional; set if your bundles use it
+      GITHUB_AUDIENCE: https://github.com/myDatapipeline    # must match your Databricks policy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity check env (masked)
+        run: |
+              echo "HOST=$DATABRICKS_HOST"
+              echo "CLIENT_ID length: ${#DATABRICKS_CLIENT_ID}"
+      - name: Get GitHub OIDC ID token (audience = org URL)
+        run: |
+          TOKEN_JSON=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://github.com/myDatapipeline")
+          echo "$TOKEN_JSON" | jq .
+          echo "JWT=$(echo "$TOKEN_JSON" | jq -r '.value')" >> $GITHUB_ENV
+
+
+      # --- Inspect OIDC claims BEFORE using the CLI ---
+      - name: Get OIDC token (for audience) and print claims
+        shell: bash
+        run: |
+          # Request an ID token for your audience
+          TOKEN_JSON=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${GITHUB_AUDIENCE}")
+          FEDERATED_JWT_TOKEN=$(echo "$TOKEN_JSON" | jq -r '.value')
+
+          echo "::add-mask::$FEDERATED_JWT_TOKEN"  # mask in logs
+
+          # Decode payload (part 2 of JWT) and print iss/aud/sub
+          PAYLOAD=$(echo "$FEDERATED_JWT_TOKEN" | cut -d '.' -f2 | tr '_-' '/+' | base64 -d 2>/dev/null || true)
+          echo "JWT payload: $PAYLOAD"
+          echo "issuer (iss):  $(echo "$PAYLOAD" | jq -r '.iss')"
+          echo "audience (aud): $(echo "$PAYLOAD" | jq -r '.aud')"
+          echo "subject (sub):  $(echo "$PAYLOAD" | jq -r '.sub')"
+
+          # Fail fast if audience mismatch (optional)
+          if [ "$(echo "$PAYLOAD" | jq -r '.aud')" != "${GITHUB_AUDIENCE}" ]; then
+            echo "❌ Audience mismatch. Update GITHUB_AUDIENCE or your Databricks federation policy."
+            exit 1
+          fi
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate bundle
+        #run: databricks bundle validate
+        run : databricks current-user me
+
+      - name: Deploy bundle
+        run: databricks bundle deploy --target dev
