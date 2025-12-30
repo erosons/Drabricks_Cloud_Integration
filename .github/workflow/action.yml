@@ -10,25 +10,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      DATABRICKS_HOST:  ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_HOST: https://<your-workspace>.cloud.databricks.com
       DATABRICKS_AUTH_TYPE: github-oidc
-      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}   # UUID
+      DATABRICKS_CLIENT_ID: <service-principal-app-id>   # UUID
       # DATABRICKS_BUNDLE_ENV: prod                      # optional; set if your bundles use it
-      GITHUB_AUDIENCE: https://github.com/myDatapipeline    # must match your Databricks policy
+      GITHUB_AUDIENCE: https://github.com/<your-org>     # must match your Databricks policy
     steps:
       - uses: actions/checkout@v4
-
-      - name: Sanity check env (masked)
-        run: |
-              echo "HOST=$DATABRICKS_HOST"
-              echo "CLIENT_ID length: ${#DATABRICKS_CLIENT_ID}"
-      - name: Get GitHub OIDC ID token (audience = org URL)
-        run: |
-          TOKEN_JSON=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=https://github.com/myDatapipeline")
-          echo "$TOKEN_JSON" | jq .
-          echo "JWT=$(echo "$TOKEN_JSON" | jq -r '.value')" >> $GITHUB_ENV
-
 
       # --- Inspect OIDC claims BEFORE using the CLI ---
       - name: Get OIDC token (for audience) and print claims
@@ -57,8 +45,10 @@ jobs:
       - uses: databricks/setup-cli@main
 
       - name: Validate bundle
-        #run: databricks bundle validate
-        run : databricks current-user me
+        run: databricks bundle validate
 
       - name: Deploy bundle
-        run: databricks bundle deploy --target dev
+        run: databricks bundle deploy
+
+      - name: Run job
+        run: databricks bundle run <your-job-name> --refresh-all

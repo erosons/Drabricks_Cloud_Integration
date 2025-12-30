@@ -36,6 +36,38 @@ from typing import Optional
 class IncrementalLoader:
     """Class for keeping track of an item in inventory."""
 
+    def batch_load(
+        self,
+        source_file_format:FileFormat = None,
+        table_name: str = None,
+        schema_name: str = None,
+        catalog_name: str = None,
+        files_source_path: str = None
+    ): 
+        """Method to perform batch load into Delta table.
+        source_file_format: FileFormat
+            The format of the source files (e.g., 'csv', 'json', 'parquet').
+        table_name: str
+            The name of the target Delta table.
+        schema_name: str
+            The schema name where the target table resides.
+        catalog_name: str
+            The catalog name where the target table resides.
+        files_source_path: str
+            The path to the source files to be loaded.
+        returns: None
+        """
+        if not spark.catalog.tableExists(f"{catalog_name}.{schema_name}.{table_name}"):
+            sql.sql(f"""
+                CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}.{table_name}
+                SELECT * 
+                FROM read_files(
+                    {files_source_path},
+                    format => {source_file_format}
+                """
+                )
+
+
     def incremental_load(
         self,
         source_file_format:FileFormat = None,
