@@ -1,6 +1,34 @@
+---##########################################################
+--- A SEVERLESS SQL WAREHOUSE IS REQUIRED TO RUN THIS SCRIPT
+---#########################################################
+
 CREATE OR REFRESH STREAMING TABLE orders_bronze
-AS SELECT current_timestamp() processing_time, input_file_name() source_file, *
-FROM cloud_files("${source}/orders", "json", map("cloudFiles.inferColumnTypes", "true"))
+SCHEDULE EVERY 1 HOUR
+AS 
+SELECT 
+current_timestamp() AS processing_time, 
+input_file_name() AS source_file, *
+_metadata.file_path AS file_path,
+_metadata.file_modification_time AS file_modification_time
+
+FROM 
+cloud_files(
+    "${source}/orders", "json", 
+    map("cloudFiles.inferColumnTypes", "true")
+    )
+
+
+CREATE OR REFRESH STREAMING TABLE orders_bronze
+SCHEDULE EVERY 1 HOUR
+AS 
+SELECT *
+FROM STREAM 
+read_files(
+    "${source}/orders_csv",
+    format => 'CSV',
+    sep =>'|',
+    header => 'true'
+    ) ;
 
 
 -- WITH DATA QUALITIES
