@@ -42,7 +42,8 @@ class BatchLoader:
         table_name: str = None,
         schema_name: str = None,
         catalog_name: str = None,
-        files_source_path: str = None
+        files_source_path: str = None,
+        separator: Optional[str] = ','
     ): 
         """Method to perform batch load into Delta table.
         source_file_format: FileFormat
@@ -64,9 +65,44 @@ class BatchLoader:
                 FROM read_files(
                     {files_source_path},
                     format => {source_file_format}
+                    sep => {separator}
+                    header => true
+                  )
                 """
             )
+    def preview_data_ops(self):
+        """Method to preview data from source files."""
+        SELECT * 
+        FROM
+        read_files(
+            path= files_source_path,
+            format= "csv",
+            sep => "|",
+            header => true
+            schema => """
+                id INT,
+                name STRING,
+                age INT,
+                city STRING
+            """
+        rescureddatacolumn => '_recscued_data'
+        ).display(5)
 
+    def fixing_missing_header_issues(self):
+        """Method to fix missing header issues in source files,
+          causing the data to be moved to rescued data column."""
+          sql.sql(f"""
+                CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}.{table_name}
+                SELECT 
+                cast(_rescued_data.c0 AS BIGINT) AS id, *
+                FROM
+                read_files(
+                    path= files_source_path,
+                    format= "csv",
+                    sep => "|",
+                    header => true
+                  )
+            """)
 
 # COMMAND ----------
 

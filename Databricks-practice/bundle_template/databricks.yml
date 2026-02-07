@@ -1,0 +1,267 @@
+# =============================================================================
+# Databricks Asset Bundle Configuration
+# =============================================================================
+# Template Version: 1.0.0
+# 
+# This is the main configuration file for your Databricks Asset Bundle (DABs).
+# Customize the values below for your specific workload.
+#
+# Documentation: https://docs.databricks.com/dev-tools/bundles/
+# =============================================================================
+
+bundle:
+  name: ${PROJECT_NAME}  # Replace with your project name (e.g., "sales-etl-pipeline")
+
+# =============================================================================
+# Variables - Define reusable values across environments
+# =============================================================================
+variables:
+  project_name:
+    description: "Name of the project"
+    default: "my-workload"
+  
+  catalog:
+    description: "Unity Catalog name"
+    default: "dev_catalog"
+  
+  schema:
+    description: "Target schema for data objects"
+    default: "default"
+  
+  warehouse_id:
+    description: "SQL Warehouse ID for queries"
+    default: ""
+  
+  notification_email:
+    description: "Email for job notifications"
+    default: "team@company.com"
+  
+  cluster_policy_id:
+    description: "Cluster policy ID (set per environment)"
+    default: ""
+
+# =============================================================================
+# Workspace Configuration
+# =============================================================================
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
+
+# =============================================================================
+# Artifacts - Python wheels, JARs, etc.
+# =============================================================================
+artifacts:
+  default:
+    type: whl
+    path: ./dist
+    build: python setup.py bdist_wheel
+
+# =============================================================================
+# Resources - Jobs, Pipelines, and other Databricks objects
+# =============================================================================
+resources:
+  # ---------------------------------------------------------------------------
+  # Jobs
+  # ---------------------------------------------------------------------------
+  jobs:
+    main_etl_job:
+      name: "${var.project_name}-main-etl"
+      description: "Main ETL pipeline job"
+      
+      # Schedule (cron format) - uncomment to enable
+      # schedule:
+      #   quartz_cron_expression: "0 0 6 * * ?"  # Daily at 6 AM
+      #   timezone_id: "America/Chicago"
+      #   pause_status: UNPAUSED
+      
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+      
+      tags:
+        project: ${var.project_name}
+        environment: ${bundle.target}
+        team: "data-engineering"
+      
+      tasks:
+        - task_key: "bronze_ingestion"
+          description: "Ingest raw data to bronze layer"
+          notebook_task:
+            notebook_path: ./src/notebooks/bronze_ingestion.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 2
+            spark_conf:
+              spark.databricks.delta.preview.enabled: "true"
+            data_security_mode: "SINGLE_USER"
+          timeout_seconds: 3600
+        
+        - task_key: "silver_transform"
+          description: "Transform data to silver layer"
+          depends_on:
+            - task_key: "bronze_ingestion"
+          notebook_task:
+            notebook_path: ./src/notebooks/silver_transform.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 2
+            data_security_mode: "SINGLE_USER"
+          timeout_seconds: 3600
+        
+        - task_key: "gold_aggregate"
+          description: "Create gold layer aggregations"
+          depends_on:
+            - task_key: "silver_transform"
+          notebook_task:
+            notebook_path: ./src/notebooks/gold_aggregate.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 1
+            data_security_mode: "SINGLE_USER"
+          timeout_seconds: 1800
+        
+        - task_key: "data_quality_checks"
+          description: "Run data quality validations"
+          depends_on:
+            - task_key: "gold_aggregate"
+          notebook_task:
+            notebook_path: ./src/notebooks/data_quality_checks.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 1
+            data_security_mode: "SINGLE_USER"
+          timeout_seconds: 1800
+
+  # ---------------------------------------------------------------------------
+  # Delta Live Tables Pipelines (Optional - uncomment if needed)
+  # ---------------------------------------------------------------------------
+  # pipelines:
+  #   dlt_pipeline:
+  #     name: "${var.project_name}-dlt-pipeline"
+  #     target: "${var.schema}"
+  #     catalog: "${var.catalog}"
+  #     development: true
+  #     continuous: false
+  #     channel: "PREVIEW"
+  #     photon: true
+  #     libraries:
+  #       - notebook:
+  #           path: ./src/pipelines/dlt_bronze.py
+  #       - notebook:
+  #           path: ./src/pipelines/dlt_silver.py
+  #     clusters:
+  #       - label: "default"
+  #         num_workers: 2
+  #         node_type_id: "Standard_DS3_v2"
+
+# =============================================================================
+# Targets (Environments)
+# =============================================================================
+# IMPORTANT: These targets align with the centralized orchestrator's 
+# sequential promotion: DEV → QA → UAT → PROD
+# =============================================================================
+targets:
+  # ---------------------------------------------------------------------------
+  # Development Environment
+  # ---------------------------------------------------------------------------
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-dev-workspace.azuredatabricks.net
+    variables:
+      catalog: "dev_catalog"
+      schema: "dev_${var.project_name}"
+      cluster_policy_id: "DEV_POLICY_ID"
+    resources:
+      jobs:
+        main_etl_job:
+          # Development overrides
+          tasks:
+            - task_key: "bronze_ingestion"
+              new_cluster:
+                num_workers: 1  # Reduced for dev
+            - task_key: "silver_transform"
+              new_cluster:
+                num_workers: 1
+            - task_key: "gold_aggregate"
+              new_cluster:
+                num_workers: 1
+
+  # ---------------------------------------------------------------------------
+  # QA Environment
+  # ---------------------------------------------------------------------------
+  qa:
+    mode: development
+    workspace:
+      host: https://adb-qa-workspace.azuredatabricks.net
+    variables:
+      catalog: "qa_catalog"
+      schema: "qa_${var.project_name}"
+      cluster_policy_id: "QA_POLICY_ID"
+
+  # ---------------------------------------------------------------------------
+  # UAT Environment
+  # ---------------------------------------------------------------------------
+  uat:
+    mode: development
+    workspace:
+      host: https://adb-uat-workspace.azuredatabricks.net
+    variables:
+      catalog: "uat_catalog"
+      schema: "uat_${var.project_name}"
+      cluster_policy_id: "UAT_POLICY_ID"
+    resources:
+      jobs:
+        main_etl_job:
+          # UAT runs on schedule for user acceptance testing
+          schedule:
+            quartz_cron_expression: "0 0 7 * * ?"
+            timezone_id: "America/Chicago"
+            pause_status: UNPAUSED
+
+  # ---------------------------------------------------------------------------
+  # Production Environment
+  # ---------------------------------------------------------------------------
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-prod-workspace.azuredatabricks.net
+    variables:
+      catalog: "prod_catalog"
+      schema: "prod_${var.project_name}"
+      cluster_policy_id: "PROD_POLICY_ID"
+      notification_email: "prod-alerts@company.com"
+    resources:
+      jobs:
+        main_etl_job:
+          # Production configuration
+          schedule:
+            quartz_cron_expression: "0 0 6 * * ?"
+            timezone_id: "America/Chicago"
+            pause_status: UNPAUSED
+          tasks:
+            - task_key: "bronze_ingestion"
+              new_cluster:
+                num_workers: 4  # Scaled for production
+            - task_key: "silver_transform"
+              new_cluster:
+                num_workers: 4
+            - task_key: "gold_aggregate"
+              new_cluster:
+                num_workers: 2
