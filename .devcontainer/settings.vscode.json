@@ -3,8 +3,20 @@
     "editor.tabSize": 4,
     "editor.formatOnSave": true,
     "files.exclude": {
-      "**/__pycache__": true,
-      "**/*.pyc": true
-    }
-  }
-  
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "vscode-pokemon.defaultPokemon": [
+        {
+            "type": "pikachu",
+            "name": "Sparky"
+        },
+        {
+            "type": "charizard",
+            "name": "Flame"
+        },
+        {
+            "type": "articuno"
+        }
+    ]
+}
