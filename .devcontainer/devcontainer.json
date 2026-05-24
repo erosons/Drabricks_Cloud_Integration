@@ -57,7 +57,7 @@
   "forwardPorts": [
     5000
   ],
-  "postCreateCommand": "pip install databricks-sdk databricks-connect==16.1.6",
+  "postCreateCommand": "pip install databricks-sdk databricks-connect==16.1.6 && curl -fsSL https://claude.ai/install.sh | bash "
 //   "mounts": [
 //     "source=${localEnv:HOME}/.cache/pypoetry,target=/home/vscode/.cache/pypoetry,type=bind",
 //     "source=${localEnv:HOME}/.cache/pip,target=/home/vscode/.cache/pip,type=bind"
