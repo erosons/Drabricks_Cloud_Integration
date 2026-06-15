@@ -43,12 +43,12 @@ def _config() -> dict:
         "book_depth": int(os.getenv("BOOK_DEPTH", "25")),
         "imbalance_threshold": float(os.getenv("IMBALANCE_THRESHOLD", "0.25")),
         "min_confidence": float(os.getenv("MIN_CONFIDENCE", "0.60")),
-        "profit_target_pct": float(os.getenv("PROFIT_TARGET_PCT", "0")),
+        "profit_target_pct": float(os.getenv("PROFIT_TARGET_PCT", "2.5")),  # 2.5% of ORDER_SIZE_USD
         "max_spread_bps": float(os.getenv("MAX_SPREAD_BPS", "15.0")),
         "dead_mans_switch": int(os.getenv("DEAD_MANS_SWITCH_SECONDS", "60")),
         "dry_run": os.getenv("DRY_RUN", "true").lower() == "true",
-        "stop_loss_usd": float(os.getenv("STOP_LOSS_USD", "30.0")),
-        "stop_loss_pct": float(os.getenv("STOP_LOSS_PCT", "0")),
+        "stop_loss_usd": float(os.getenv("STOP_LOSS_USD", "0")),      # overridden by STOP_LOSS_PCT
+        "stop_loss_pct": float(os.getenv("STOP_LOSS_PCT", "0.375")),  # 0.375% of ORDER_SIZE_USD
         "risk_reward_ratio": float(os.getenv("RISK_REWARD_RATIO", "3.0")),
         "trail_step_pct": float(os.getenv("TRAIL_STEP_PCT", "0.25")),
         "price_decimals": int(os.getenv("PRICE_DECIMALS", "1")),
@@ -148,30 +148,25 @@ async def run(cfg: dict) -> None:
                 cfg["order_size_usd"], cfg["order_size"],
             )
 
-    # Percentage-based stop loss: STOP_LOSS_PCT % of position USD value
-    # Example: $80 order × 0.375% = $0.30 SL
-    if cfg["stop_loss_pct"] > 0:
-        _position_usd_sl = cfg["order_size_usd"] if cfg["order_size_usd"] > 0 else cfg["order_size"] * _mark
-        _sl_usd = _position_usd_sl * cfg["stop_loss_pct"] / 100.0
-        cfg["stop_loss_usd"] = _sl_usd
-        log.info(
-            "Stop loss: %.3f%% of $%.2f = $%.4f",
-            cfg["stop_loss_pct"], _position_usd_sl, _sl_usd,
-        )
+    # SL and TP are always derived from ORDER_SIZE_USD — never from static USD amounts.
+    # This ensures consistent risk regardless of token price.
+    _order_usd = cfg["order_size_usd"] if cfg["order_size_usd"] > 0 else cfg["order_size"] * _mark
+    if _order_usd <= 0:
+        log.error("ORDER_SIZE_USD=0 and no live price — cannot compute SL/TP. Set ORDER_SIZE_USD in pair env.")
+        raise SystemExit(1)
 
-    # Percentage-based take profit: PROFIT_TARGET_PCT % of position USD value
-    # Example: $80 order × 2.5% = $2.00 TP → trail milestones at $0.50 / $1.00 / $1.50
-    if cfg["profit_target_pct"] > 0:
-        _position_usd = cfg["order_size_usd"] if cfg["order_size_usd"] > 0 else cfg["order_size"] * _mark
-        _tp_usd = _position_usd * cfg["profit_target_pct"] / 100.0
-        cfg["take_profit_usd"] = _tp_usd
-        log.info(
-            "Profit target: %.1f%% of $%.2f = $%.4f  (trail steps: $%.4f/$%.4f/$%.4f)",
-            cfg["profit_target_pct"], _position_usd, _tp_usd,
-            _tp_usd * 0.25, _tp_usd * 0.50, _tp_usd * 0.75,
-        )
-    else:
-        cfg["take_profit_usd"] = 0.0
+    cfg["stop_loss_usd"]   = _order_usd * cfg["stop_loss_pct"]    / 100.0
+    cfg["take_profit_usd"] = _order_usd * cfg["profit_target_pct"] / 100.0
+    _tp_usd = cfg["take_profit_usd"]
+
+    log.info(
+        "Risk: ORDER=$%.2f  SL=%.3f%%=$%.4f  TP=%.1f%%=$%.4f  "
+        "trail(25%%=$%.4f  50%%=$%.4f  75%%=$%.4f)",
+        _order_usd,
+        cfg["stop_loss_pct"],   cfg["stop_loss_usd"],
+        cfg["profit_target_pct"], _tp_usd,
+        _tp_usd * 0.25, _tp_usd * 0.50, _tp_usd * 0.75,
+    )
 
     analyzer = OrderFlowAnalyzer(
         imbalance_threshold=cfg["imbalance_threshold"],
