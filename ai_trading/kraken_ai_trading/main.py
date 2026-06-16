@@ -48,7 +48,7 @@ def _config() -> dict:
         "dead_mans_switch": int(os.getenv("DEAD_MANS_SWITCH_SECONDS", "60")),
         "dry_run": os.getenv("DRY_RUN", "true").lower() == "true",
         "stop_loss_usd": float(os.getenv("STOP_LOSS_USD", "0")),      # overridden by STOP_LOSS_PCT
-        "stop_loss_pct": float(os.getenv("STOP_LOSS_PCT", "0.375")),  # 0.375% of ORDER_SIZE_USD
+        "stop_loss_pct": float(os.getenv("STOP_LOSS_PCT", "0.83")),   # 0.83% of ORDER_SIZE_USD
         "risk_reward_ratio": float(os.getenv("RISK_REWARD_RATIO", "3.0")),
         "trail_step_pct": float(os.getenv("TRAIL_STEP_PCT", "0.25")),
         "price_decimals": int(os.getenv("PRICE_DECIMALS", "1")),
