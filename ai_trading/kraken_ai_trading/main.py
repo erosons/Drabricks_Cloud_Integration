@@ -42,7 +42,7 @@ def _config() -> dict:
         "order_size_usd": float(os.getenv("ORDER_SIZE_USD", "0")),
         "book_depth": int(os.getenv("BOOK_DEPTH", "25")),
         "imbalance_threshold": float(os.getenv("IMBALANCE_THRESHOLD", "0.25")),
-        "min_confidence": float(os.getenv("MIN_CONFIDENCE", "0.60")),
+        "min_confidence": float(os.getenv("MIN_CONFIDENCE", "0.55")),
         "profit_target_pct": float(os.getenv("PROFIT_TARGET_PCT", "2.5")),  # 2.5% of ORDER_SIZE_USD
         "max_spread_bps": float(os.getenv("MAX_SPREAD_BPS", "15.0")),
         "dead_mans_switch": int(os.getenv("DEAD_MANS_SWITCH_SECONDS", "60")),
