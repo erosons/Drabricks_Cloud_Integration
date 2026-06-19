@@ -51,6 +51,7 @@ def _config() -> dict:
         "stop_loss_pct": float(os.getenv("STOP_LOSS_PCT", "0.83")),   # 0.83% of ORDER_SIZE_USD
         "risk_reward_ratio": float(os.getenv("RISK_REWARD_RATIO", "3.0")),
         "trail_step_pct": float(os.getenv("TRAIL_STEP_PCT", "0.25")),
+        "breakeven_buffer_pct": float(os.getenv("BREAKEVEN_BUFFER_PCT", "0.5")),  # lifts break-even SL above entry to cover taker fee + slippage
         "price_decimals": int(os.getenv("PRICE_DECIMALS", "1")),
         # Price action / trend filter
         "fast_ema": int(os.getenv("FAST_EMA", "20")),
@@ -178,6 +179,7 @@ async def run(cfg: dict) -> None:
         risk_reward_ratio=cfg["risk_reward_ratio"],
         trail_step_pct=cfg["trail_step_pct"],
         take_profit_usd=cfg["take_profit_usd"],
+        breakeven_buffer_pct=cfg["breakeven_buffer_pct"],
     )
 
     price_action = PriceActionAnalyzer(

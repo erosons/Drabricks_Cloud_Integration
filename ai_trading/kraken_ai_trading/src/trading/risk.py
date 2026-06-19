@@ -71,11 +71,13 @@ class RiskManager:
         risk_reward_ratio: float = 3.0,
         trail_step_pct: float = 0.25,
         take_profit_usd: float = 0.0,   # direct override — used when PROFIT_TARGET_PCT is set
+        breakeven_buffer_pct: float = 0.5,  # lift break-even SL above entry to cover taker fee + slippage
     ) -> None:
         self.stop_loss_usd = stop_loss_usd
         # Direct USD target takes priority over ratio-based calculation
         self.take_profit_usd = take_profit_usd if take_profit_usd > 0 else stop_loss_usd * risk_reward_ratio
         self.trail_step_usd = self.take_profit_usd * trail_step_pct
+        self.breakeven_buffer_pct = breakeven_buffer_pct
         self._risks: dict[str, PositionRisk] = {}
         self.log = get_logger(__name__)
 
@@ -159,14 +161,19 @@ class RiskManager:
             milestones = int(gain_per_unit / trail_per_unit)
             if milestones > risk.milestones_hit:
                 risk.milestones_hit = milestones
-                # milestone 1 → break-even; each additional → advance by trail_step
-                new_sl = risk.entry_price + max(0, milestones - 1) * trail_per_unit
+                if milestones == 1:
+                    # Break-even + buffer to cover taker fee + spread on market exit
+                    new_sl = risk.entry_price * (1 + self.breakeven_buffer_pct / 100)
+                else:
+                    # Each further milestone locks in an additional trail_step of profit
+                    new_sl = risk.entry_price + (milestones - 1) * trail_per_unit
                 if new_sl > risk.sl_price:
                     old_sl = risk.sl_price
                     risk.sl_price = new_sl
                     self.log.info(
-                        "Trail SL advanced  %s  milestone=%d  SL %.4f → %.4f",
+                        "Trail SL advanced  %s  milestone=%d  SL %.4f → %.4f%s",
                         risk.symbol, milestones, old_sl, new_sl,
+                        "  [break-even+fee buffer]" if milestones == 1 else "",
                     )
 
         # SL hit
@@ -198,13 +205,17 @@ class RiskManager:
             milestones = int(gain_per_unit / trail_per_unit)
             if milestones > risk.milestones_hit:
                 risk.milestones_hit = milestones
-                new_sl = risk.entry_price - max(0, milestones - 1) * trail_per_unit
+                if milestones == 1:
+                    new_sl = risk.entry_price * (1 - self.breakeven_buffer_pct / 100)
+                else:
+                    new_sl = risk.entry_price - (milestones - 1) * trail_per_unit
                 if new_sl < risk.sl_price:
                     old_sl = risk.sl_price
                     risk.sl_price = new_sl
                     self.log.info(
-                        "Trail SL advanced  %s  milestone=%d  SL %.4f → %.4f",
+                        "Trail SL advanced  %s  milestone=%d  SL %.4f → %.4f%s",
                         risk.symbol, milestones, old_sl, new_sl,
+                        "  [break-even+fee buffer]" if milestones == 1 else "",
                     )
 
         # SL hit
