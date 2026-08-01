@@ -1,0 +1,552 @@
+# ============================================================================
+# CME Mini & Micro Futures Product Catalog
+# ============================================================================
+# Source: CME Group product slate (Minis & Micros, all asset classes)
+# https://www.cmegroup.com/markets/products (groups=Minis/Micros)
+#
+# Per-product fields:
+#   trade:        true  = the bot will trade this product (when enabled by mode)
+#                 false = catalog entry only — ignored by the launcher
+#   exchange:     CME / CBOT / NYMEX / COMEX  (all route through CME Globex)
+#   size:         contract unit (what one contract represents)
+#   tick_size:    minimum price increment
+#   tick_value:   dollar value of one tick — used by risk.py to convert
+#                 STOP_LOSS_USD into ticks
+#   months:       listed contract cycle (resolver picks the ACTIVE month daily
+#                 from CME Volume & Open Interest — see contract_resolver)
+#   cme_slug:     path fragment for the CME product page; the Volume & OI page
+#                 is https://www.cmegroup.com/markets/<cme_slug>/volume
+#   overrides:    optional per-product strategy overrides (same keys as the
+#                 strategy_defaults block in config.yaml)
+# ============================================================================
+
+products:
+
+  # ==========================================================================
+  # EQUITIES  (CME / CBOT)
+  # ==========================================================================
+  MES:
+    name: Micro E-mini S&P 500
+    category: equities
+    exchange: CME
+    class: micro
+    size: "$5 x S&P 500 Index"
+    tick_size: 0.25
+    tick_value: 1.25
+    months: [H, M, U, Z]                # quarterly: Mar, Jun, Sep, Dec
+    cme_slug: equities/sp/micro-e-mini-sandp-500
+    trade: true
+
+  ES:
+    name: E-mini S&P 500
+    category: equities
+    exchange: CME
+    class: mini
+    size: "$50 x S&P 500 Index"
+    tick_size: 0.25
+    tick_value: 12.50
+    months: [H, M, U, Z]
+    cme_slug: equities/sp/e-mini-sandp500
+    trade: false
+
+  MNQ:
+    name: Micro E-mini Nasdaq-100
+    category: equities
+    exchange: CME
+    class: micro
+    size: "$2 x Nasdaq-100 Index"
+    tick_size: 0.25
+    tick_value: 0.50
+    months: [H, M, U, Z]
+    cme_slug: equities/nasdaq/micro-e-mini-nasdaq-100
+    trade: true
+
+  NQ:
+    name: E-mini Nasdaq-100
+    category: equities
+    exchange: CME
+    class: mini
+    size: "$20 x Nasdaq-100 Index"
+    tick_size: 0.25
+    tick_value: 5.00
+    months: [H, M, U, Z]
+    cme_slug: equities/nasdaq/e-mini-nasdaq-100
+    trade: false
+
+  MYM:
+    name: Micro E-mini Dow
+    category: equities
+    exchange: CBOT
+    class: micro
+    size: "$0.50 x DJIA Index"
+    tick_size: 1.0
+    tick_value: 0.50
+    months: [H, M, U, Z]
+    cme_slug: equities/dow-jones/micro-e-mini-dow
+    trade: false
+
+  YM:
+    name: E-mini Dow ($5)
+    category: equities
+    exchange: CBOT
+    class: mini
+    size: "$5 x DJIA Index"
+    tick_size: 1.0
+    tick_value: 5.00
+    months: [H, M, U, Z]
+    cme_slug: equities/dow-jones/e-mini-dow
+    trade: false
+
+  M2K:
+    name: Micro E-mini Russell 2000
+    category: equities
+    exchange: CME
+    class: micro
+    size: "$5 x Russell 2000 Index"
+    tick_size: 0.10
+    tick_value: 0.50
+    months: [H, M, U, Z]
+    cme_slug: equities/russell/micro-e-mini-russell-2000
+    trade: false
+
+  RTY:
+    name: E-mini Russell 2000
+    category: equities
+    exchange: CME
+    class: mini
+    size: "$50 x Russell 2000 Index"
+    tick_size: 0.10
+    tick_value: 5.00
+    months: [H, M, U, Z]
+    cme_slug: equities/russell/e-mini-russell-2000
+    trade: false
+
+  EMD:
+    name: E-mini S&P MidCap 400
+    category: equities
+    exchange: CME
+    class: mini
+    size: "$100 x S&P MidCap 400 Index"
+    tick_size: 0.10
+    tick_value: 10.00
+    months: [H, M, U, Z]
+    cme_slug: equities/sp/e-mini-sandp-midcap-400
+    trade: false
+
+  # ==========================================================================
+  # ENERGY  (NYMEX)
+  # ==========================================================================
+  MCL:
+    name: Micro WTI Crude Oil
+    category: energy
+    exchange: NYMEX
+    class: micro
+    size: "100 barrels"
+    tick_size: 0.01
+    tick_value: 1.00
+    months: [F, G, H, J, K, M, N, Q, U, V, X, Z]    # monthly
+    cme_slug: energy/crude-oil/micro-wti-crude-oil
+    trade: false
+
+  QM:
+    name: E-mini Crude Oil
+    category: energy
+    exchange: NYMEX
+    class: mini
+    size: "500 barrels"
+    tick_size: 0.025
+    tick_value: 12.50
+    months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
+    cme_slug: energy/crude-oil/emini-crude-oil
+    trade: false
+
+  MNG:
+    name: Micro Henry Hub Natural Gas
+    category: energy
+    exchange: NYMEX
+    class: micro
+    size: "1,000 MMBtu"
+    tick_size: 0.001
+    tick_value: 1.00
+    months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
+    cme_slug: energy/natural-gas/micro-henry-hub-natural-gas
+    trade: false
+
+  QG:
+    name: E-mini Natural Gas
+    category: energy
+    exchange: NYMEX
+    class: mini
+    size: "2,500 MMBtu"
+    tick_size: 0.005
+    tick_value: 12.50
+    months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
+    cme_slug: energy/natural-gas/emini-natural-gas
+    trade: false
+
+  # ==========================================================================
+  # METALS  (COMEX)
+  # ==========================================================================
+  MGC:
+    name: Micro Gold
+    category: metals
+    exchange: COMEX
+    class: micro
+    size: "10 troy oz"
+    tick_size: 0.10
+    tick_value: 1.00
+    months: [G, J, M, Q, V, Z]          # even months
+    cme_slug: metals/precious/e-micro-gold
+    trade: false
+
+  QO:
+    name: E-mini Gold
+    category: metals
+    exchange: COMEX
+    class: mini
+    size: "50 troy oz"
+    tick_size: 0.25
+    tick_value: 12.50
+    months: [G, J, M, Q, V, Z]
+    cme_slug: metals/precious/e-mini-gold
+    trade: false
+
+  SIL:
+    name: Micro Silver (1,000 oz)
+    category: metals
+    exchange: COMEX
+    class: micro
+    size: "1,000 troy oz"
+    tick_size: 0.005
+    tick_value: 5.00
+    months: [H, K, N, U, Z]
+    cme_slug: metals/precious/1000-oz-silver
+    trade: false
+
+  QI:
+    name: E-mini Silver
+    category: metals
+    exchange: COMEX
+    class: mini
+    size: "2,500 troy oz"
+    tick_size: 0.0125
+    tick_value: 31.25
+    months: [H, K, N, U, Z]
+    cme_slug: metals/precious/e-mini-silver
+    trade: false
+
+  MHG:
+    name: Micro Copper
+    category: metals
+    exchange: COMEX
+    class: micro
+    size: "2,500 lbs"
+    tick_size: 0.0005
+    tick_value: 1.25
+    months: [H, K, N, U, Z]
+    cme_slug: metals/base/micro-copper
+    trade: false
+
+  # ==========================================================================
+  # FX  (CME)
+  # ==========================================================================
+  M6E:
+    name: Micro EUR/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "12,500 EUR"
+    tick_size: 0.0001
+    tick_value: 1.25
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-euro
+    trade: false
+
+  E7:
+    name: E-mini Euro FX
+    category: fx
+    exchange: CME
+    class: mini
+    size: "62,500 EUR"
+    tick_size: 0.0001
+    tick_value: 6.25
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-mini-euro-fx
+    trade: false
+
+  M6B:
+    name: Micro GBP/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "6,250 GBP"
+    tick_size: 0.0001
+    tick_value: 0.625
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-british-pound
+    trade: false
+
+  M6A:
+    name: Micro AUD/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "10,000 AUD"
+    tick_size: 0.0001
+    tick_value: 1.00
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-australian-dollar
+    trade: false
+
+  MCD:
+    name: Micro CAD/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "10,000 CAD"
+    tick_size: 0.0001
+    tick_value: 1.00
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-canadian-dollar
+    trade: false
+
+  MJY:
+    name: Micro JPY/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "1,250,000 JPY"
+    tick_size: 0.000001
+    tick_value: 1.25
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-japanese-yen
+    trade: false
+
+  J7:
+    name: E-mini Japanese Yen
+    category: fx
+    exchange: CME
+    class: mini
+    size: "6,250,000 JPY"
+    tick_size: 0.000001
+    tick_value: 6.25
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-mini-japanese-yen
+    trade: false
+
+  MSF:
+    name: Micro CHF/USD
+    category: fx
+    exchange: CME
+    class: micro
+    size: "12,500 CHF"
+    tick_size: 0.0001
+    tick_value: 1.25
+    months: [H, M, U, Z]
+    cme_slug: fx/g10/e-micro-swiss-franc
+    trade: false
+
+  # ==========================================================================
+  # INTEREST RATES  (CBOT)
+  # Note: rates have no "mini" tier — the micro tier is the Micro Treasury
+  # Yield suite (cash-settled, quoted in yield, $10 per basis point).
+  # ==========================================================================
+  2YY:
+    name: Micro 2-Year Treasury Yield
+    category: interest_rates
+    exchange: CBOT
+    class: micro
+    size: "$1,000 x yield index ($10/bp)"
+    tick_size: 0.001
+    tick_value: 1.00
+    months: [monthly]                    # nearest 2 months listed
+    cme_slug: interest-rates/us-treasury/micro-2-year-yield
+    trade: false
+
+  5YY:
+    name: Micro 5-Year Treasury Yield
+    category: interest_rates
+    exchange: CBOT
+    class: micro
+    size: "$1,000 x yield index ($10/bp)"
+    tick_size: 0.001
+    tick_value: 1.00
+    months: [monthly]
+    cme_slug: interest-rates/us-treasury/micro-5-year-yield
+    trade: false
+
+  10Y:
+    name: Micro 10-Year Treasury Yield
+    category: interest_rates
+    exchange: CBOT
+    class: micro
+    size: "$1,000 x yield index ($10/bp)"
+    tick_size: 0.001
+    tick_value: 1.00
+    months: [monthly]
+    cme_slug: interest-rates/us-treasury/micro-10-year-yield
+    trade: false
+
+  30Y:
+    name: Micro 30-Year Treasury Yield
+    category: interest_rates
+    exchange: CBOT
+    class: micro
+    size: "$1,000 x yield index ($10/bp)"
+    tick_size: 0.001
+    tick_value: 1.00
+    months: [monthly]
+    cme_slug: interest-rates/us-treasury/micro-30-year-yield
+    trade: false
+
+  # ==========================================================================
+  # CRYPTOCURRENCIES  (CME)
+  # ==========================================================================
+  MBT:
+    name: Micro Bitcoin
+    category: crypto
+    exchange: CME
+    class: micro
+    size: "0.10 BTC"
+    tick_size: 5.00
+    tick_value: 0.50
+    months: [monthly]                    # monthly, nearest 6 + 2 Dec
+    cme_slug: cryptocurrencies/micro-bitcoin
+    trade: false
+
+  MET:
+    name: Micro Ether
+    category: crypto
+    exchange: CME
+    class: micro
+    size: "0.10 ETH"
+    tick_size: 0.50
+    tick_value: 0.05
+    months: [monthly]
+    cme_slug: cryptocurrencies/micro-ether
+    trade: false
+
+  MSL:
+    name: Micro Solana
+    category: crypto
+    exchange: CME
+    class: micro
+    size: "25 SOL"
+    tick_size: 0.05
+    tick_value: 1.25
+    months: [monthly]
+    cme_slug: cryptocurrencies/micro-sol
+    trade: false
+
+  MXP:
+    name: Micro XRP
+    category: crypto
+    exchange: CME
+    class: micro
+    size: "2,500 XRP"
+    tick_size: 0.0005
+    tick_value: 1.25
+    months: [monthly]
+    cme_slug: cryptocurrencies/micro-xrp
+    trade: false
+
+  # ==========================================================================
+  # AGRICULTURE  (CBOT)
+  # Micro Ag suite launched Feb 2025 — 1/10th of the standard contracts.
+  # Mini grains are 1/5th of the standard contracts.
+  # ==========================================================================
+  MZC:
+    name: Micro Corn
+    category: agriculture
+    exchange: CBOT
+    class: micro
+    size: "500 bushels"
+    tick_size: 0.005                     # 1/2 cent per bushel
+    tick_value: 2.50
+    months: [H, K, N, U, Z]
+    cme_slug: agriculture/grains/micro-corn
+    trade: false
+
+  XC:
+    name: Mini Corn
+    category: agriculture
+    exchange: CBOT
+    class: mini
+    size: "1,000 bushels"
+    tick_size: 0.00125
+    tick_value: 1.25
+    months: [H, K, N, U, Z]
+    cme_slug: agriculture/grains/mini-sized-corn
+    trade: false
+
+  MZW:
+    name: Micro Wheat (Chicago SRW)
+    category: agriculture
+    exchange: CBOT
+    class: micro
+    size: "500 bushels"
+    tick_size: 0.005
+    tick_value: 2.50
+    months: [H, K, N, U, Z]
+    cme_slug: agriculture/grains/micro-wheat
+    trade: false
+
+  XW:
+    name: Mini Wheat (Chicago SRW)
+    category: agriculture
+    exchange: CBOT
+    class: mini
+    size: "1,000 bushels"
+    tick_size: 0.00125
+    tick_value: 1.25
+    months: [H, K, N, U, Z]
+    cme_slug: agriculture/grains/mini-sized-wheat
+    trade: false
+
+  MZS:
+    name: Micro Soybean
+    category: agriculture
+    exchange: CBOT
+    class: micro
+    size: "500 bushels"
+    tick_size: 0.005
+    tick_value: 2.50
+    months: [F, H, K, N, Q, U, X]
+    cme_slug: agriculture/oilseeds/micro-soybean
+    trade: false
+
+  XK:
+    name: Mini Soybean
+    category: agriculture
+    exchange: CBOT
+    class: mini
+    size: "1,000 bushels"
+    tick_size: 0.00125
+    tick_value: 1.25
+    months: [F, H, K, N, Q, U, X]
+    cme_slug: agriculture/oilseeds/mini-sized-soybean
+    trade: false
+
+  MZL:
+    name: Micro Soybean Oil
+    category: agriculture
+    exchange: CBOT
+    class: micro
+    size: "6,000 lbs"
+    tick_size: 0.01
+    tick_value: 0.60
+    months: [F, H, K, N, Q, U, V, Z]
+    cme_slug: agriculture/oilseeds/micro-soybean-oil
+    trade: false
+
+  MZM:
+    name: Micro Soybean Meal
+    category: agriculture
+    exchange: CBOT
+    class: micro
+    size: "10 short tons"
+    tick_size: 0.10
+    tick_value: 1.00
+    months: [F, H, K, N, Q, U, V, Z]
+    cme_slug: agriculture/oilseeds/micro-soybean-meal
+    trade: false

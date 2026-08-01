@@ -1,0 +1,127 @@
+# ============================================================================
+# Tradovate Futures Bot — Global Configuration
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Execution mode — the three-switch safety model
+#
+#   dry_run: true                        → signals only, NO orders anywhere
+#   dry_run: false + live_trading: false → orders to Tradovate DEMO account
+#   dry_run: false + live_trading: true  → orders to Tradovate LIVE account
+#
+# Which products trade is controlled per-product in products.yaml (trade: true).
+# The launcher spawns one process per product with trade: true.
+# ----------------------------------------------------------------------------
+mode:
+  dry_run: true
+  live_trading: false
+
+# ----------------------------------------------------------------------------
+# Tradovate API endpoints (selected automatically from mode)
+# ----------------------------------------------------------------------------
+tradovate:
+  demo_rest: https://demo.tradovateapi.com/v1
+  live_rest: https://live.tradovateapi.com/v1
+  market_data_ws: wss://md.tradovateapi.com/v1/websocket
+  demo_ws: wss://demo.tradovateapi.com/v1/websocket
+  live_ws: wss://live.tradovateapi.com/v1/websocket
+  # Credentials come from environment / .env — never from this file:
+  #   TRADOVATE_USERNAME, TRADOVATE_PASSWORD, TRADOVATE_APP_ID,
+  #   TRADOVATE_CID, TRADOVATE_SECRET, TRADOVATE_DEVICE_ID
+  token_renewal_minutes: 60          # access tokens expire ~90 min; renew early
+
+# ----------------------------------------------------------------------------
+# Trading session (America/New_York)
+#
+# Window runs OVERNIGHT: opens 20:00 ET, closes 16:00 ET the next day.
+# At (close − flatten_buffer_minutes) the bot flattens every position and
+# cancels every working order. Outside the window no orders are placed.
+# ----------------------------------------------------------------------------
+session:
+  timezone: America/New_York
+  open: "20:00"                      # 8:00 PM ET
+  close: "16:00"                     # 4:00 PM ET (next day)
+  flatten_buffer_minutes: 5          # start flatten/cancel at 15:55 ET
+  trade_days: [Sun, Mon, Tue, Wed, Thu, Fri]   # Globex week (Sun open → Fri close)
+
+# ----------------------------------------------------------------------------
+# Economic news guard (ForexFactory)
+#
+# Daily scrape of https://www.forexfactory.com/calendar filtered to
+# currency=USD, impact=High ("red folder"). Each matching event creates a
+# blackout window [event − before, event + after]:
+#   - no NEW entries during a blackout
+#   - working entry orders are cancelled at blackout start
+#   - open positions: behavior set by position_policy
+# ----------------------------------------------------------------------------
+news_guard:
+  enabled: true
+  source_url: https://www.forexfactory.com/calendar
+  currencies: [USD]
+  impacts: [high]                    # red folder only
+  blackout_before_minutes: 15
+  blackout_after_minutes: 15
+  refresh_time_et: "18:00"           # re-scrape calendar daily before the open
+  position_policy: hold              # hold | flatten  (what to do with an open
+                                     # position when a blackout begins)
+
+# ----------------------------------------------------------------------------
+# Active-contract resolver (CME Volume & Open Interest)
+#
+# Once per day the resolver pulls Volume & OI for every product with
+# trade: true (e.g. https://www.cmegroup.com/markets/agriculture/grains/corn/volume)
+# and stores the contract month with the highest volume AND open interest as
+# the ACTIVE contract (e.g. MES → MESU6). A roll is flagged when the winner
+# changes; the bot finishes the session on the old month, then subscribes to
+# the new one at the next session open.
+# ----------------------------------------------------------------------------
+contract_resolver:
+  refresh_time_et: "18:30"           # after CME publishes prior-day final volume
+  selection_rule: max_volume_and_oi  # both must agree; else prefer max volume
+  stale_after_hours: 48              # refuse to trade if data older than this
+  volume_url_template: "https://www.cmegroup.com/markets/{cme_slug}/volume"
+
+# ----------------------------------------------------------------------------
+# Storage
+# ----------------------------------------------------------------------------
+database:
+  path: data/tradovate_bot.db        # SQLite
+  tables: [active_contracts, volume_oi_history, news_events, fills, equity_snapshots]
+
+# ----------------------------------------------------------------------------
+# Strategy defaults (per-product overrides live in products.yaml)
+# Ported from the kraken order-flow engine; prices are tick-quantized.
+# ----------------------------------------------------------------------------
+strategy_defaults:
+  book_depth: 10
+  imbalance_threshold: 0.25
+  min_confidence: 0.55
+  max_spread_ticks: 2                # futures analog of MAX_SPREAD_BPS
+  fast_ema: 20
+  slow_ema: 60
+  spike_threshold: 0.003
+  recovery_pct: 0.5
+  exhaustion_ttl: 60
+  retest_proximity: 0.002
+  retest_memory_ticks: 400
+  retest_ttl: 40
+  order_cooldown_seconds: 10
+
+# ----------------------------------------------------------------------------
+# Risk defaults
+# ----------------------------------------------------------------------------
+risk_defaults:
+  max_contracts: 1                   # per product
+  stop_loss_usd: 50.0                # converted to ticks via tick_value
+  risk_reward_ratio: 3.0
+  trail_step_pct: 0.25
+  daily_loss_limit_usd: 150.0        # bot stops entering for the day when hit
+  flatten_on_disconnect: true
+
+# ----------------------------------------------------------------------------
+# Monitoring
+# ----------------------------------------------------------------------------
+monitoring:
+  metrics_base_port: 8100            # product N gets 8100 + N
+  log_level: INFO
+  log_dir: logs
