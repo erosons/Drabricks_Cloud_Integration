@@ -10,7 +10,7 @@ three subsystems futures require that spot crypto does not:
 2. **Economic news guard** — ForexFactory "red-folder" USD events create no-trade
    blackout windows (15 min before → 15 min after).
 3. **Session management** — futures have a maintenance break; the bot trades
-   20:00 ET → 16:00 ET, then flattens everything and goes quiet.
+   the 08:00 ET → 16:00 ET day session, then flattens everything and goes quiet.
 
 ---
 
@@ -254,20 +254,23 @@ CME Globex trades nearly 23 h/day, but this bot deliberately trades a narrower
 window and is always flat through the maintenance break:
 
 ```
-        ET  16:00      15:55                      20:00        16:00
-  ───────────┼───────────┼──────── ... ─────────────┼────────────┼──────►
-             │  CLOSED   │                          │   OPEN     │
-             │ (no orders,                          │ (trading)  │
-             │  stay flat)                          │            │
-             │                                      │            │
-   15:55 ET  FLATTEN_ALL:                 20:00 ET  session open:│
-   ├── cancel every working order         ├── re-read active_contracts
-   ├── liquidatePosition on every open    ├── (apply pending roll)
-   │   position (market)                  ├── subscribe MD for active month
-   └── verify flat via REST positions     └── begin EMA warmup
-       poll — retry until confirmed
+        ET  16:00                        08:00              15:55    16:00
+  ───────────┼─────────── ... ────────────┼──────────────────┼────────┼───►
+             │          CLOSED            │       OPEN       │FLATTEN │
+             │     (no orders, flat)      │    (trading)     │        │
+             │                            │                  │        │
+                              08:00 ET  session open:   15:55 ET  FLATTEN_ALL:
+                              ├── re-read active_contracts   ├── cancel every
+                              ├── (apply pending roll)       │   working order
+                              ├── subscribe MD for           ├── liquidate every
+                              │   active month               │   open position
+                              └── begin EMA warmup           └── verify flat via
+                                                                 REST poll — retry
+                                                                 until confirmed
 
-  Trade days: Sunday 20:00 ET open → Friday 16:00 ET close (Globex week).
+  Trade days: Monday–Friday, 08:00 → 16:00 ET day session.
+  (Sunday is listed in trade_days for forward-compat, but the 08:00–16:00
+  window never overlaps Globex's Sunday 18:00 ET open, so no Sunday trading.)
   Saturday: fully closed.
 ```
 
@@ -290,7 +293,7 @@ Book/DOM update received
          │
          ▼
 ┌──────────────────────────────────────────────────────────┐
-│ Gate F1: Session      outside 20:00→16:00 ET?  ──► SKIP  │
+│ Gate F1: Session      outside 08:00→16:00 ET?  ──► SKIP  │
 │ Gate F2: News         inside a blackout window? ──► SKIP │
 │ Gate F3: Contract     active_contracts stale?   ──► SKIP │
 ├──────────────────────────────────────────────────────────┤
@@ -397,7 +400,7 @@ See [`config/config.yaml`](../config/config.yaml) (inline-documented). Summary:
 |-------|--------------|
 | `mode` | `dry_run`, `live_trading` — the two account-level switches (§2) |
 | `tradovate` | demo/live REST + WS URLs; credentials via env vars only |
-| `session` | `open: 20:00`, `close: 16:00` ET, `flatten_buffer_minutes: 5`, Sun–Fri |
+| `session` | `open: 08:00`, `close: 16:00` ET, `flatten_buffer_minutes: 5`, Sun–Fri |
 | `news_guard` | USD + high impact, 15 min before/after, daily 18:00 ET refresh, `position_policy` |
 | `contract_resolver` | daily 18:30 ET, `max_volume_and_oi` rule, 48 h staleness guard |
 | `strategy_defaults` | ported kraken thresholds (imbalance 0.25, confidence 0.55, EMA 20/60, …) |

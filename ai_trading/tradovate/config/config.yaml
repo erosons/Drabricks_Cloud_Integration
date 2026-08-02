@@ -33,13 +33,13 @@ tradovate:
 # ----------------------------------------------------------------------------
 # Trading session (America/New_York)
 #
-# Window runs OVERNIGHT: opens 20:00 ET, closes 16:00 ET the next day.
+# Day session: opens 08:00 ET, closes 16:00 ET the same day.
 # At (close − flatten_buffer_minutes) the bot flattens every position and
 # cancels every working order. Outside the window no orders are placed.
 # ----------------------------------------------------------------------------
 session:
   timezone: America/New_York
-  open: "20:00"                      # 8:00 PM ET
+  open: "08:00"                      # 8:00 AM ET
   close: "16:00"                     # 4:00 PM ET (next day)
   flatten_buffer_minutes: 5          # start flatten/cancel at 15:55 ET
   trade_days: [Sun, Mon, Tue, Wed, Thu, Fri]   # Globex week (Sun open → Fri close)
