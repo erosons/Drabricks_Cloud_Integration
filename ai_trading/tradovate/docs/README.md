@@ -403,17 +403,25 @@ See [`config/config.yaml`](../config/config.yaml) (inline-documented). Summary:
 | `session` | `open: 08:00`, `close: 16:00` ET, `flatten_buffer_minutes: 5`, Sun–Fri |
 | `news_guard` | USD + high impact, 15 min before/after, daily 18:00 ET refresh, `position_policy` |
 | `contract_resolver` | daily 18:30 ET, `max_volume_and_oi` rule, 48 h staleness guard |
-| `strategy_defaults` | ported kraken thresholds (imbalance 0.25, confidence 0.55, EMA 20/60, …) |
-| `risk_defaults` | `max_contracts`, `stop_loss_usd`, RR 3.0, trail 0.25, daily loss limit |
+| `shared_services` | structure engine, levels service, regime classifier, trailing-exit engine, execution guards |
+| `strategies` | 23 playbook modules with skill number, tier, priority, and `enabled` flags |
+| `risk_operations` | operational switches only (`flatten_on_disconnect`, one strategy per product) |
 
-Per-product overrides (any `strategy_defaults`/`risk_defaults` key) nest under
-`overrides:` on the product entry in `products.yaml`.
+**Risk is configured per product, not globally**: every product entry in
+`products.yaml` carries a required `risk:` block (`max_contracts`,
+`risk_per_trade_pct`, `stop_loss_usd`, `risk_reward_ratio`,
+`partial_exit_ladder`, `breakeven_after_t1`, `trail_step_pct`,
+`daily_loss_limit_usd`) so clients control risk values product by product.
+A product with no risk block fails config validation at startup — there is no
+generic fallback to inherit. Strategy parameter overrides (any
+`strategies.<module>.params` key) nest under `overrides:` on the product entry.
 
 ---
 
 ## 12. Risk Management
 
-Ported trailing-stop engine, converted to ticks:
+All risk-appetite values come from the product's own `risk:` block in
+`products.yaml` (§11). The trailing-stop engine, ported and converted to ticks:
 
 ```
 stop_ticks = ceil(stop_loss_usd / (tick_value × max_contracts))

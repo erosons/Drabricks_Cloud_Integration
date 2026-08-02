@@ -16,8 +16,19 @@
 #                 from CME Volume & Open Interest — see contract_resolver)
 #   cme_slug:     path fragment for the CME product page; the Volume & OI page
 #                 is https://www.cmegroup.com/markets/<cme_slug>/volume
+#   risk:         REQUIRED per-product risk settings — risk is controlled at
+#                 product level (no global fallback in config.yaml), so a
+#                 client tunes each product independently:
+#                   max_contracts          max absolute net position
+#                   risk_per_trade_pct     % of account risked per R
+#                   stop_loss_usd          hard dollar cap per position
+#                   risk_reward_ratio      fallback TP when no ladder applies
+#                   partial_exit_ladder    t1_rr/t1_fraction/t2_rr partial exits
+#                   breakeven_after_t1     move stop to entry after T1 fills
+#                   trail_step_pct         trail step as fraction of TP range
+#                   daily_loss_limit_usd   product stops entering for the day
 #   overrides:    optional per-product strategy overrides (same keys as the
-#                 strategy_defaults block in config.yaml)
+#                 strategies.<module>.params blocks in config.yaml)
 # ============================================================================
 
 products:
@@ -35,6 +46,15 @@ products:
     tick_value: 1.25
     months: [H, M, U, Z]                # quarterly: Mar, Jun, Sep, Dec
     cme_slug: equities/sp/micro-e-mini-sandp-500
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: true
 
   ES:
@@ -47,6 +67,15 @@ products:
     tick_value: 12.50
     months: [H, M, U, Z]
     cme_slug: equities/sp/e-mini-sandp500
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MNQ:
@@ -59,6 +88,15 @@ products:
     tick_value: 0.50
     months: [H, M, U, Z]
     cme_slug: equities/nasdaq/micro-e-mini-nasdaq-100
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: true
 
   NQ:
@@ -71,6 +109,15 @@ products:
     tick_value: 5.00
     months: [H, M, U, Z]
     cme_slug: equities/nasdaq/e-mini-nasdaq-100
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MYM:
@@ -83,6 +130,15 @@ products:
     tick_value: 0.50
     months: [H, M, U, Z]
     cme_slug: equities/dow-jones/micro-e-mini-dow
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   YM:
@@ -95,6 +151,15 @@ products:
     tick_value: 5.00
     months: [H, M, U, Z]
     cme_slug: equities/dow-jones/e-mini-dow
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   M2K:
@@ -107,6 +172,15 @@ products:
     tick_value: 0.50
     months: [H, M, U, Z]
     cme_slug: equities/russell/micro-e-mini-russell-2000
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   RTY:
@@ -119,6 +193,15 @@ products:
     tick_value: 5.00
     months: [H, M, U, Z]
     cme_slug: equities/russell/e-mini-russell-2000
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   EMD:
@@ -131,6 +214,15 @@ products:
     tick_value: 10.00
     months: [H, M, U, Z]
     cme_slug: equities/sp/e-mini-sandp-midcap-400
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   # ==========================================================================
@@ -146,6 +238,15 @@ products:
     tick_value: 1.00
     months: [F, G, H, J, K, M, N, Q, U, V, X, Z]    # monthly
     cme_slug: energy/crude-oil/micro-wti-crude-oil
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   QM:
@@ -158,6 +259,15 @@ products:
     tick_value: 12.50
     months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
     cme_slug: energy/crude-oil/emini-crude-oil
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MNG:
@@ -170,6 +280,15 @@ products:
     tick_value: 1.00
     months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
     cme_slug: energy/natural-gas/micro-henry-hub-natural-gas
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   QG:
@@ -182,6 +301,15 @@ products:
     tick_value: 12.50
     months: [F, G, H, J, K, M, N, Q, U, V, X, Z]
     cme_slug: energy/natural-gas/emini-natural-gas
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   # ==========================================================================
@@ -197,6 +325,15 @@ products:
     tick_value: 1.00
     months: [G, J, M, Q, V, Z]          # even months
     cme_slug: metals/precious/e-micro-gold
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   QO:
@@ -209,6 +346,15 @@ products:
     tick_value: 12.50
     months: [G, J, M, Q, V, Z]
     cme_slug: metals/precious/e-mini-gold
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   SIL:
@@ -221,6 +367,15 @@ products:
     tick_value: 5.00
     months: [H, K, N, U, Z]
     cme_slug: metals/precious/1000-oz-silver
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   QI:
@@ -233,6 +388,15 @@ products:
     tick_value: 31.25
     months: [H, K, N, U, Z]
     cme_slug: metals/precious/e-mini-silver
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MHG:
@@ -245,6 +409,15 @@ products:
     tick_value: 1.25
     months: [H, K, N, U, Z]
     cme_slug: metals/base/micro-copper
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   # ==========================================================================
@@ -260,6 +433,15 @@ products:
     tick_value: 1.25
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-euro
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   E7:
@@ -272,6 +454,15 @@ products:
     tick_value: 6.25
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-mini-euro-fx
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   M6B:
@@ -284,6 +475,15 @@ products:
     tick_value: 0.625
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-british-pound
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   M6A:
@@ -296,6 +496,15 @@ products:
     tick_value: 1.00
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-australian-dollar
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MCD:
@@ -308,6 +517,15 @@ products:
     tick_value: 1.00
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-canadian-dollar
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MJY:
@@ -320,6 +538,15 @@ products:
     tick_value: 1.25
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-japanese-yen
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   J7:
@@ -332,6 +559,15 @@ products:
     tick_value: 6.25
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-mini-japanese-yen
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MSF:
@@ -344,6 +580,15 @@ products:
     tick_value: 1.25
     months: [H, M, U, Z]
     cme_slug: fx/g10/e-micro-swiss-franc
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   # ==========================================================================
@@ -361,6 +606,15 @@ products:
     tick_value: 1.00
     months: [monthly]                    # nearest 2 months listed
     cme_slug: interest-rates/us-treasury/micro-2-year-yield
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   5YY:
@@ -373,6 +627,15 @@ products:
     tick_value: 1.00
     months: [monthly]
     cme_slug: interest-rates/us-treasury/micro-5-year-yield
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   10Y:
@@ -385,6 +648,15 @@ products:
     tick_value: 1.00
     months: [monthly]
     cme_slug: interest-rates/us-treasury/micro-10-year-yield
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   30Y:
@@ -397,6 +669,15 @@ products:
     tick_value: 1.00
     months: [monthly]
     cme_slug: interest-rates/us-treasury/micro-30-year-yield
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   # ==========================================================================
@@ -412,6 +693,15 @@ products:
     tick_value: 0.50
     months: [monthly]                    # monthly, nearest 6 + 2 Dec
     cme_slug: cryptocurrencies/micro-bitcoin
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MET:
@@ -424,6 +714,15 @@ products:
     tick_value: 0.05
     months: [monthly]
     cme_slug: cryptocurrencies/micro-ether
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MSL:
@@ -436,6 +735,15 @@ products:
     tick_value: 1.25
     months: [monthly]
     cme_slug: cryptocurrencies/micro-sol
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MXP:
@@ -448,6 +756,15 @@ products:
     tick_value: 1.25
     months: [monthly]
     cme_slug: cryptocurrencies/micro-xrp
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   # ==========================================================================
@@ -465,6 +782,15 @@ products:
     tick_value: 2.50
     months: [H, K, N, U, Z]
     cme_slug: agriculture/grains/micro-corn
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   XC:
@@ -477,6 +803,15 @@ products:
     tick_value: 1.25
     months: [H, K, N, U, Z]
     cme_slug: agriculture/grains/mini-sized-corn
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MZW:
@@ -489,6 +824,15 @@ products:
     tick_value: 2.50
     months: [H, K, N, U, Z]
     cme_slug: agriculture/grains/micro-wheat
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   XW:
@@ -501,6 +845,15 @@ products:
     tick_value: 1.25
     months: [H, K, N, U, Z]
     cme_slug: agriculture/grains/mini-sized-wheat
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MZS:
@@ -513,6 +866,15 @@ products:
     tick_value: 2.50
     months: [F, H, K, N, Q, U, X]
     cme_slug: agriculture/oilseeds/micro-soybean
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   XK:
@@ -525,6 +887,15 @@ products:
     tick_value: 1.25
     months: [F, H, K, N, Q, U, X]
     cme_slug: agriculture/oilseeds/mini-sized-soybean
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 100.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 300.0
     trade: false
 
   MZL:
@@ -537,6 +908,15 @@ products:
     tick_value: 0.60
     months: [F, H, K, N, Q, U, V, Z]
     cme_slug: agriculture/oilseeds/micro-soybean-oil
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false
 
   MZM:
@@ -549,4 +929,13 @@ products:
     tick_value: 1.00
     months: [F, H, K, N, Q, U, V, Z]
     cme_slug: agriculture/oilseeds/micro-soybean-meal
+    risk:
+      max_contracts: 2
+      risk_per_trade_pct: 0.5
+      stop_loss_usd: 50.0
+      risk_reward_ratio: 3.0
+      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      trail_step_pct: 0.25
+      daily_loss_limit_usd: 150.0
     trade: false

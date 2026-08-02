@@ -463,19 +463,20 @@ strategies:
   # skill 5 martingale ladder — signal kept in ema_snapback_scalp, sizing discarded
 
 # ----------------------------------------------------------------------------
-# Risk defaults (playbook risk model layered onto the base bot's)
+# Risk — configured PER PRODUCT, not here.
+#
+# Every product in products.yaml carries its own required `risk:` block
+# (max_contracts, risk_per_trade_pct, stop_loss_usd, risk_reward_ratio,
+# partial_exit_ladder, breakeven_after_t1, trail_step_pct,
+# daily_loss_limit_usd) so clients control risk values per product. There is
+# deliberately no generic fallback: a product without a risk block fails
+# config validation at startup rather than inheriting someone else's numbers.
+#
+# Only operational safety switches (not risk appetite) live globally:
 # ----------------------------------------------------------------------------
-risk_defaults:
-  max_contracts: 2                   # ≥2 enables the 1:2 half / 1:4 rest ladder
-  risk_per_trade_pct: 0.5            # playbook skill 1: 0.5–1% of account per R
-  stop_loss_usd: 50.0                # hard cap, converted to ticks via tick_value
-  risk_reward_ratio: 3.0             # base bot fallback when module has no ladder
-  partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-  breakeven_after_t1: true
-  trail_step_pct: 0.25
-  daily_loss_limit_usd: 150.0        # bot stops entering for the day when hit
-  max_concurrent_strategies_per_product: 1   # regime router picks one module
+risk_operations:
   flatten_on_disconnect: true
+  max_concurrent_strategies_per_product: 1   # regime router picks one module
 
 # ----------------------------------------------------------------------------
 # Monitoring
