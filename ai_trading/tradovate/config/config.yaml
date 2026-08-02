@@ -88,34 +88,393 @@ database:
   path: data/tradovate_bot.db        # SQLite
   tables: [active_contracts, volume_oi_history, news_events, fills, equity_snapshots]
 
-# ----------------------------------------------------------------------------
-# Strategy defaults (per-product overrides live in products.yaml)
-# Ported from the kraken order-flow engine; prices are tick-quantized.
-# ----------------------------------------------------------------------------
-strategy_defaults:
-  book_depth: 10
-  imbalance_threshold: 0.25
-  min_confidence: 0.55
-  max_spread_ticks: 2                # futures analog of MAX_SPREAD_BPS
-  fast_ema: 20
-  slow_ema: 60
-  spike_threshold: 0.003
-  recovery_pct: 0.5
-  exhaustion_ttl: 60
-  retest_proximity: 0.002
-  retest_memory_ticks: 400
-  retest_ttl: 40
-  order_cooldown_seconds: 10
+# ============================================================================
+# STRATEGIES — from docs/trading-strategies-SKILL.md (the playbook)
+#
+# Architecture follows the playbook's Skill 22 consolidation note: five shared
+# services + thin signal modules. Each strategy lists its skill number(s),
+# tier (scalp = 1–5 min, swing = 30 min+), build priority, and an `enabled`
+# flag. A strategy trades only when `enabled: true` AND its regime gate allows
+# it AND the product/session/news gates pass.
+#
+# Priority tiers (playbook Skill 20 note):
+#   1 = build first (mechanical, complete, futures-native)
+#   2 = build second (mechanical, needs parameter lock)
+#   3 = provisional (rules ambiguous/incomplete — resolve before building)
+#   x = excluded from automation (Gann 14, Renko 18, Elliott 20;
+#       martingale sizing of Skill 5 discarded — signal folded into ema_snapback)
+# ============================================================================
 
 # ----------------------------------------------------------------------------
-# Risk defaults
+# Shared services (consumed by all strategy modules)
+# ----------------------------------------------------------------------------
+shared_services:
+
+  structure_engine:                  # pivots, HH/HL state, BOS (skills 1,15,19,21,22)
+    pivot_left: 5
+    pivot_right: 5                   # pivot confirms pivot_right bars late — never
+                                     # fill earlier than the confirmation bar
+    bos_buffer_atr: 0.25             # close beyond level by >= 0.25 x ATR(14)
+
+  levels_service:                    # one level engine, many providers
+    session_anchor: rth              # rth | eth — decide once; identical in
+                                     # backtest and live (skills 8,13,16,23)
+    providers:
+      pivots_traditional: true       # P/R1/R2/S1/S2 from prior session (skill 13)
+      cpr: true                      # Pivot/TC/BC + width percentile (skills 23,24)
+      vwap_bands: true               # session VWAP hlc3, ±1/2/3σ (skills 8,16)
+      session_extremes: true         # prior-day H/L, overnight H/L (skills 4,21)
+      volume_zones: false            # base→impulse supply/demand (skills 15,21);
+                                     # prefer volume-profile nodes when built
+    zone_tolerance_atr: 0.25
+    zone_max_touches: 2              # zone expires after this many tests
+
+  regime_classifier:                 # routes trend vs range modules (skills 3,11,23,24)
+    ema_fast: 9
+    ema_slow: 21
+    min_ema_separation_atr: 0.25     # below this = chop, trend modules off
+    adx_period: 14
+    adx_trend_threshold: 20
+    vwap_slope_flat_threshold: 0.05  # |slope| below = rotational day (skill 16 gate)
+    cpr_width_lookback_sessions: 60
+    cpr_narrow_percentile: 30        # ≤ → expect trend day → breakout modules
+    cpr_wide_percentile: 70          # ≥ → expect rotation → fade/reaction modules
+    vwap_warmup_minutes: 30          # no VWAP-based signals until bands mature
+
+  trailing_exit_engine:              # one trail engine, pluggable providers
+    provider: supertrend             # supertrend | sma20 | donchian_mid | fractal | sar
+    supertrend: { atr_period: 10, multiplier: 3.0 }        # skill 12
+    sma: { period: 20 }                                    # skill 10
+    donchian: { period: 20 }                               # skill 17
+    fractal: { left: 2, right: 2 }                         # skill 19
+    sar: { start: 0.02, step: 0.02, max: 0.2 }             # skill 31 (weakest — A/B only)
+
+  execution_guards:                  # apply to every module
+    slippage_model_ticks: { ES: 2, NQ: 4, default: 2 }
+    min_reward_to_cost_multiple: 2.0 # skip if expected move < 2x round-trip cost
+    max_trade_risk_usd: 50.0         # skip signals whose structural stop exceeds this
+    order_cooldown_seconds: 10
+
+# ----------------------------------------------------------------------------
+# Strategy modules
+# ----------------------------------------------------------------------------
+strategies:
+
+  # --- Base engine carried over from the kraken bot (order-flow scalp) ------
+  order_flow_scalp:
+    skill: legacy-kraken
+    tier: scalp
+    priority: 1
+    enabled: true
+    params:
+      book_depth: 10
+      imbalance_threshold: 0.25
+      min_confidence: 0.55
+      max_spread_ticks: 2
+      fast_ema: 20
+      slow_ema: 60
+      spike_threshold: 0.003
+      recovery_pct: 0.5
+      exhaustion_ttl: 60
+      retest_proximity: 0.002
+      retest_memory_ticks: 400
+      retest_ttl: 40
+
+  # --- Priority 1: build first ---------------------------------------------
+  pivot_levels:
+    skill: [13, 26]
+    tier: swing
+    priority: 1
+    enabled: false
+    params:
+      entry_mode: retest             # breakout (skill 13) | retest (skill 26) —
+                                     # run both in backtest, pick per instrument
+      retest_window_bars: 12
+      targets: [R1, R2]              # structural two-target ladder
+      bias_buffer_atr: 0.25          # close beyond P by this before bias flips
+
+  cpr_day_router:
+    skill: [23, 24]
+    tier: swing
+    priority: 1
+    enabled: false
+    params:                          # narrow day → breakout child; wide day →
+      narrow_mode: breakout          #   band-reaction child; mutually exclusive
+      wide_mode: band_reaction       #   per session by CPR width percentile
+      # PREREQUISITE (playbook): validate "CPR width predicts day type" on
+      # ES/NQ history before trusting either child.
+
+  bb_squeeze_breakout:
+    skill: 10
+    tier: swing                      # 30-minute per card
+    priority: 1
+    enabled: false
+    params:
+      bb_period: 20
+      bb_stdev: 2.0
+      bbw_squeeze_percentile: 20     # BBW below this pctile of last 150 bars
+      bbw_lookback_bars: 150
+      require_bbw_break: true        # BOTH legs mandatory — do not weaken
+      trail_provider: sma20
+
+  vwap_rsi_pullback:
+    skill: 8
+    tier: scalp
+    priority: 1
+    enabled: false
+    params:
+      rsi_period: 14
+      rsi_arm_below: 30              # arms setup; VWAP hold triggers it
+      rsi_arm_ttl_bars: 10
+      rsi_exit_above: 70
+      fallback_target: vwap_band_1   # RSI exit alone is weak — band target backup
+      direction_filter: vwap_side    # longs only above VWAP (mirror shorts)
+
+  supertrend_rsi:
+    skill: 12
+    tier: swing
+    priority: 1
+    enabled: false
+    params:
+      supertrend: { atr_period: 10, multiplier: 3.0 }
+      rsi_period: 14
+      rsi_confirm_long: 60           # confirm threshold from card text when captured
+      rsi_confirm_short: 40
+      exit: supertrend_flip          # stop and trail are the Supertrend line
+
+  ema_snapback_scalp:
+    skill: [6, 5]                    # skill 5's signal folded in; martingale DISCARDED
+    tier: scalp
+    priority: 1
+    enabled: false
+    params:
+      timeframe_minutes: 5
+      ema_period: 7
+      detachment_min_atr: 0.5        # ignore marginal 1-tick detachments
+      stop: swing_low
+      target: ema_line               # dynamic — modify exit each bar
+      time_stop_bars: 12             # exit if EMA never reached (trend-day guard)
+      sizing: flat                   # NEVER martingale (playbook skill 5 verdict)
+
+  ema_sr_break:
+    skill: 3
+    tier: scalp
+    priority: 1
+    enabled: false
+    params:
+      ema_fast: 9
+      ema_slow: 21
+      level_source: session_extremes # session levels beat rolling N-bar extremes
+      break_confirmation: close      # close-based, never wick-based
+      trail_alt: ema21_close_back    # or 1:2/1:4 ladder
+
+  # --- Priority 2: build second (parameters locked here for reproducibility) -
+  two_legged_pullback:
+    skill: 1
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      entry: signal_candle_high_stop
+      stop: signal_candle_low
+      targets: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+      breakeven_after_t1: true
+      min_contracts_for_partials: 2  # 1 contract → T2-only
+      max_signal_risk_usd: 50.0      # skip wide signal candles (NQ hazard)
+
+  volume_breakout:
+    skill: 2
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      consolidation_bars: [8, 20]
+      consolidation_max_range_atr: 1.0
+      low_volume_ratio: 0.7          # vs 20-bar RVOL same-time-of-day baseline
+      breakout_body_atr: 1.5
+      breakout_volume_ratio: 1.5
+      volume_baseline: rvol_time_of_day   # NOT flat SMA — intraday U-shape
+      roll_week_guard: true          # volume migrates during contract roll
+
+  micro_flag_scalp:
+    skill: 7
+    tier: scalp
+    priority: 2
+    enabled: false
+    params:
+      timeframe_minutes: 1
+      cluster_bars: [3, 6]           # "4 small candles" relaxed per playbook
+      candle_max_atr: 0.6
+      trend_filter: ema9_21_or_vwap_side
+      session_window_hours_after_open: 3
+      execution: python_ws_only      # latency-critical; no webhook path
+
+  vwap_band_fade:
+    skill: 16
+    tier: scalp
+    priority: 2
+    enabled: false
+    params:
+      entry_band_sigma: 2            # test 2 vs 3 (card ambiguous)
+      confirmation: close_back_inside
+      targets: { t1: vwap, t2: opposite_band }
+      regime_gate: vwap_flat_only    # MANDATORY — never fade band rides on trend days
+      mutually_exclusive_with: vwap_rsi_pullback   # opposite uses of same indicator
+
+  donchian_pullback:
+    skill: 17
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      period: 20                     # test 10/20/55 (Turtle set) out-of-sample
+      pullback_target: mid_line
+      pullback_tolerance_channel_width: 0.25
+      stop: pullback_swing_low
+      exit: close_below_mid
+      near_substitute_of: supertrend_rsi   # run one per instrument, not both
+
+  fractal_trend:
+    skill: 19
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      sma_filter: 50
+      sma_buffer_atr: 0.25
+      entry: confirmed_up_fractal_break    # fractal known only at N+2 — no lookahead
+      stop: last_confirmed_down_fractal
+      trail_provider: fractal
+
+  zone_sweep:
+    skill: [15, 21]                  # supply/demand zones + SMC sweeps = ONE module
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      zone_source: volume_zones      # or volume-profile nodes when available
+      impulse_min_atr: 2.0
+      zone_volume_ratio: 1.5
+      sweep_max_penetration_ticks: 8
+      sweep_reclaim_bars: 3
+      stop_buffer_ticks: 3           # futures sweep the obvious wick by a few ticks
+      min_rr: 1.5
+
+  structure_break:
+    skill: 22
+    tier: swing
+    priority: 2
+    enabled: false
+    params:
+      entry: close_beyond_prior_swing
+      buffer_atr: 0.25               # obvious swing points get swept — buffer mandatory
+      stop: last_higher_low
+      targets: { t1_rr: 2.0, t2_rr: 4.0 }
+      compare_against: two_legged_pullback   # same structure engine, different timing
+
+  pinbar_zone_fade:
+    skill: 4
+    tier: swing                      # 15-min+ only; pinbars are noise on 1-min
+    priority: 2
+    enabled: false
+    params:
+      min_timeframe_minutes: 15
+      wick_body_ratio: 2.0
+      zone_source: session_extremes
+      stop_buffer_ticks: 3
+      regime_gate: range_only        # MANDATORY — no pinbar fades against EMA trend
+      target: opposite_zone
+      min_range_to_risk: 2.0
+
+  vcp_breakout:
+    skill: 29
+    tier: swing                      # daily/4H; long-side pattern
+    priority: 2
+    enabled: false
+    params:
+      min_contractions: 2
+      contraction_ratio: 0.7         # each pullback ≤ 0.7 x previous
+      volume_dry_up_filter: true
+      stop: last_contraction_low
+      long_only: true
+      # Equity-native pattern — validate on futures data before trusting.
+
+  # --- RSI mean-reversion family: ONE module, pluggable confirmation filters
+  #     (playbook skill 27/32 note: 6 variants = 1 build + 1 comparison test) --
+  rsi_reversion:
+    skill: [25, 27, 28, 32]
+    tier: swing
+    priority: 3                      # each filter has an unresolved ambiguity —
+    enabled: false                   # settle from card text before building
+    params:
+      rsi_period: 14
+      confirmation_filter: none      # slow_rsi (25) | volume_osc (27) |
+                                     # divergence (28) | mw_pattern (32)
+      regime_gate: range_only
+      time_stop_bars: 20
+      # skill 25: resolve slow-RSI reading A vs B; skill 27: resolve VO direction;
+      # skill 28: confirmed-pivot divergence only (no repaint); skill 32: use
+      # neckline-break trigger, location filter W<40 / M>60.
+
+  # --- Priority 3: provisional -----------------------------------------------
+  bb_fake_move:
+    skill: 9
+    tier: swing
+    priority: 3
+    enabled: false                   # card rule garbled — reconstruct + validate
+    params:
+      interpretation: no_close_beyond_band   # "fake" = band tagged but held
+      trend_intact: mid_band_rising
+      fold_into: vwap_rsi_pullback   # if no distinct edge in backtest
+
+  sector_confirmation:
+    skill: 11
+    tier: gate                       # filter, not a strategy
+    priority: 3
+    enabled: false
+    params:
+      cheap_test_first: "ES longs only when NQ above its VWAP/EMA"
+
+  sar_rsi_scalp:
+    skill: 31
+    tier: scalp
+    priority: 3
+    enabled: false                   # = skill 12 with SAR swapped in; A/B variant only
+    params:
+      timeframe_minutes: 3
+      min_stop_atr: 0.75             # SAR stops can be tighter than noise
+      heiken_ashi: display_only      # NEVER fill at HA prices
+
+  trendline_retest:
+    skill: 30
+    tier: swing
+    priority: 3
+    enabled: false                   # diagonal-level provider for pivot_levels retest
+    params:
+      level_source: regression_channel   # reproducible; not hand-drawn trendlines
+      regression_bars: 50
+
+  # --- Excluded from automation (kept for the record) ------------------------
+  # skill 14 (Gann fan)      — arbitrary scaling, not reproducible; use
+  #                            regression channel (trendline_retest) instead
+  # skill 18 (Renko)         — synthetic fills inflate backtests; low priority
+  # skill 20 (Elliott)       — non-unique revisable counts = repainting; the
+  #                            tradable part IS two_legged_pullback
+  # skill 5 martingale ladder — signal kept in ema_snapback_scalp, sizing discarded
+
+# ----------------------------------------------------------------------------
+# Risk defaults (playbook risk model layered onto the base bot's)
 # ----------------------------------------------------------------------------
 risk_defaults:
-  max_contracts: 1                   # per product
-  stop_loss_usd: 50.0                # converted to ticks via tick_value
-  risk_reward_ratio: 3.0
+  max_contracts: 2                   # ≥2 enables the 1:2 half / 1:4 rest ladder
+  risk_per_trade_pct: 0.5            # playbook skill 1: 0.5–1% of account per R
+  stop_loss_usd: 50.0                # hard cap, converted to ticks via tick_value
+  risk_reward_ratio: 3.0             # base bot fallback when module has no ladder
+  partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
+  breakeven_after_t1: true
   trail_step_pct: 0.25
   daily_loss_limit_usd: 150.0        # bot stops entering for the day when hit
+  max_concurrent_strategies_per_product: 1   # regime router picks one module
   flatten_on_disconnect: true
 
 # ----------------------------------------------------------------------------
