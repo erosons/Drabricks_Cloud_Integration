@@ -1,0 +1,18 @@
+[Unit]
+Description=AWS Cost Prometheus Exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kraken
+WorkingDirectory=/opt/kraken_bot
+EnvironmentFile=/opt/kraken_bot/.env
+ExecStart=/opt/kraken_bot/venv/bin/python monitoring/aws_cost_exporter.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

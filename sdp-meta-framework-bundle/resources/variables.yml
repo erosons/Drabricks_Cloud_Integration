@@ -1,0 +1,60 @@
+# =============================================================================
+# Variables for SDP-META Framework + Bundle
+# =============================================================================
+
+variables:
+  # ---------------------------------------------------------------------------
+  # Unity Catalog Configuration
+  # ---------------------------------------------------------------------------
+  uc_catalog_name:
+    description: "UC catalog for all SDP-META objects"
+    default: users
+
+  sdp_meta_schema:
+    description: "Schema for dataflowspec tables (onboarding metadata)"
+    default: samson_eromonsei_sdp_meta_specs
+
+  bronze_schema:
+    description: "Schema for bronze layer tables"
+    default: samson_eromonsei_sdp_meta_bronze
+
+  silver_schema:
+    description: "Schema for silver layer tables"
+    default: samson_eromonsei_sdp_meta_silver
+
+  # ---------------------------------------------------------------------------
+  # SDP-META Wheel Dependency
+  # ---------------------------------------------------------------------------
+  # This references the artifact built from framework/setup.py.
+  # DAB auto-builds the wheel on `bundle deploy` and uploads it.
+  # The variable below is the VOLUME path for the pipeline %pip install.
+  # On deploy, the wheel_upload_job copies the artifact to this volume path.
+  # ---------------------------------------------------------------------------
+  sdp_meta_dependency:
+    description: "Path to the SDP-META wheel on UC Volume (for pipeline notebooks)"
+    default: /Volumes/users/samson_eromonsei/sdp_meta_files/wheels/databricks_labs_sdp_meta-0.1.0-py3-none-any.whl
+
+  # ---------------------------------------------------------------------------
+  # UC Volume for configs, data, and wheel storage
+  # ---------------------------------------------------------------------------
+  uc_volume_path:
+    description: "UC Volume base path for configs, test data, DDLs, DQE files"
+    default: /Volumes/users/samson_eromonsei/sdp_meta_files
+
+  # ---------------------------------------------------------------------------
+  # Dataflowspec Table Names
+  # ---------------------------------------------------------------------------
+  bronze_dataflowspec_table:
+    description: "Table name for bronze dataflowspec (created by onboarding)"
+    default: bronze_dataflowspec_table
+
+  silver_dataflowspec_table:
+    description: "Table name for silver dataflowspec (created by onboarding)"
+    default: silver_dataflowspec_table
+
+  # ---------------------------------------------------------------------------
+  # Environment
+  # ---------------------------------------------------------------------------
+  env:
+    description: "Environment identifier (dev/prod)"
+    default: dev

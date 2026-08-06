@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and fill in your values
+# terraform.tfvars is git-ignored — never commit real values
+
+aws_region       = "us-east-1"
+instance_type    = "m5n.large"        # 8 GiB RAM | 2 vCPU | up to 25 Gbps ENA
+key_pair_name    = "my-key-pair"      # must already exist in your AWS account
+allowed_ssh_cidr = "203.0.113.10/32"  # restrict to your IP — don't leave as 0.0.0.0/0 in prod
+project_name     = "kraken-bot"
+environment      = "production"

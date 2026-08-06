@@ -1,0 +1,14 @@
+METRICS_PORT 8083 already in use — metrics disabled for this session
+2026-05-28 02:30:50.041 [INFO] main: Prometheus metrics on http://localhost:8083/metrics
+2026-05-28 02:30:50.042 [INFO] main: Fetching WebSocket token via REST...
+2026-05-28 02:30:51.481 [INFO] main: Balance: {'BABY': '0.00018', 'FARTCOIN': '0.00000', 'H': '0.00000', 'NEAR': '0.00089752', 'XETH': '0.0000000199', 'XXBT': '0.0000000000', 'XXDG': '0.00000000', 'XXMR': '0.0000000000', 'XXRP': '0.00000950', 'XZEC': '0.0000000000', 'ZUSD': '471.8835'}
+2026-05-28 02:30:51.840 [INFO] src.trading.risk: RiskManager init: SL=$5.00  TP=$15.00  trail_step=$3.75
+2026-05-28 02:30:51.842 [INFO] main: Starting Kraken Order Flow Bot | symbol=XLM/USD size=57.0 max_pos=570.0 dry_run=False
+2026-05-28 02:30:53.963 [INFO] src.client.websocket: Connected to wss://ws-auth.kraken.com/v2
+2026-05-28 02:30:53.964 [INFO] main: Authenticated executions subscription sent
+2026-05-28 02:30:54.048 [INFO] src.client.websocket: Connected to wss://ws.kraken.com/v2
+2026-05-28 02:30:54.048 [INFO] main: System status: [{'version': '2.0.10', 'system': 'online', 'api_version': 'v2', 'connection_id': 3909529050502230005}]
+2026-05-28 02:30:54.049 [INFO] main: Public subscriptions sent for XLM/USD
+2026-05-28 02:30:54.505 [INFO] main: Book snapshot XLM/USD  mid=0.1783  spread=0.0002  imb=-0.430
+2026-05-28 02:31:41.737 [INFO] main: Shutdown signal received — cancelling all orders and exiting
+2026-05-28 02:31:42.653 [INFO] main: All orders cancelled on shutdown

@@ -1,0 +1,57 @@
+  Project Structure
+
+  kraken ai trading/
+  ├── main.py                          ← entry point, wires everything together
+  ├── .env.example                     ← copy to .env and fill in your keys
+  ├── pyproject.toml                   ← deps: aiohttp, websockets, sortedcontainers
+  └── src/
+      ├── auth/
+      │   └── signer.py                ← HMAC-SHA512 REST signature (exact Kraken algorithm)
+      ├── client/
+      │   ├── rest.py                  ← async REST client (token, balance, orders, deadman's switch)
+      │   └── websocket.py             ← async WS v2 client (reconnect, ping, subscription replay)
+      ├── market_data/
+      │   ├── orderbook.py             ← Level-2 book with imbalance + CRC32 checksum validation
+      │   └── ticker.py                ← ticker feed dataclass
+      └── trading/
+          ├── orders.py                ← OrderManager: place/cancel/amend via WS, fill reconciliation
+          ├── position.py              ← PositionTracker: avg cost, realized/unrealized PnL
+          └── order_flow.py            ← OrderFlowAnalyzer + Strategy (book imbalance × trade flow)
+
+  Architecture
+
+  ┌───────────────────┬──────────────────────────────────────────────────────────────────────┐
+  │       Layer       │                             What it does                             │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Auth              │ Nonce + HMAC-SHA512 signs every REST call                            │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ REST              │ One-shot calls: fetch WS token, balance, dead-man's switch heartbeat │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Public WS         │ wss://ws.kraken.com/v2 — book, trades, ticker                        │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Auth WS           │ wss://ws-auth.kraken.com/v2 — executions, order placement            │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ OrderBook         │ SortedDict (bids desc / asks asc), CRC32 checksum, imbalance score   │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ OrderFlowAnalyzer │ score = 0.6 × book_imbalance + 0.4 × trade_flow_delta                │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Strategy          │ Posts passive limit orders inside best bid/ask when signal fires     │
+  ├───────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Risk              │ max_position, max_spread_bps, DRY_RUN=true gate, dead-man's switch   │
+  └───────────────────┴──────────────────────────────────────────────────────────────────────┘
+
+  To start once you have keys
+
+  cd "kraken ai trading"
+  pip install -e .
+  cp .env.example .env
+  # fill in KRAKEN_API_KEY and KRAKEN_API_SECRET, keep DRY_RUN=true first
+  python main.py
+
+  Sources:
+  - Spot REST Authentication | Kraken API Center
+  - Spot Websockets Authentication | Kraken API Center
+  - Add Order | Kraken API Center
+  - Executions | Kraken API Center
+  - Book (Level 2) | Kraken API Center
+  - Spot Websockets Introduction | Kraken API Center

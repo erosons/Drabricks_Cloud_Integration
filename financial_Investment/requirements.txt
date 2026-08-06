@@ -1,0 +1,12 @@
+streamlit>=1.35
+streamlit-autorefresh>=1.0
+requests>=2.31
+beautifulsoup4>=4.12
+feedparser>=6.0
+lxml>=5.0
+apscheduler>=3.10
+pandas>=2.0
+plotly>=5.18
+SQLAlchemy>=2.0
+python-dateutil>=2.8
+pytz>=2024.1

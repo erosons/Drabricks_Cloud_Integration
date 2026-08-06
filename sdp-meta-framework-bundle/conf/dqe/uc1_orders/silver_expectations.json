@@ -1,0 +1,8 @@
+{
+  "expect": {
+    "valid_order_id": "order_id IS NOT NULL",
+    "valid_customer_id": "customer_id IS NOT NULL",
+    "valid_order_date": "order_date IS NOT NULL",
+    "positive_amount": "amount > 0"
+  }
+}

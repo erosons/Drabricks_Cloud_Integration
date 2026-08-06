@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Wrapper: run close_position.py on EC2 via SSH.
+#
+# Usage (from project root):
+#   ./trade SAND 0.0521
+#   ./trade XRP 2.10 --qty 100
+#   ./trade ETH 3600 --side buy --yes
+#   ./trade SAND 0.0521 --dry-run
+#
+# Set EC2_PEM to the path of your key file, or pass it as the first env var:
+#   EC2_PEM=~/.ssh/mykey.pem ./trade SAND 0.0521
+
+EC2_IP="54.167.228.52"
+EC2_USER="ec2-user"
+EC2_DIR="/opt/kraken_bot"
+
+# Resolve PEM — check env var, then common locations
+PEM="${EC2_PEM:-}"
+if [ -z "$PEM" ]; then
+    for candidate in \
+        "$HOME/.ssh/kraken_project.pem" \
+        "$HOME/.ssh/kraken.pem" \
+        "$HOME/.ssh/id_rsa"; do
+        if [ -f "$candidate" ]; then
+            PEM="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ -z "$PEM" ] || [ ! -f "$PEM" ]; then
+    echo "ERROR: PEM key not found. Set EC2_PEM=/path/to/key.pem" >&2
+    exit 1
+fi
+
+exec ssh -i "$PEM" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_IP}" \
+    "cd ${EC2_DIR} && sudo -u kraken python3 close_position.py $*"

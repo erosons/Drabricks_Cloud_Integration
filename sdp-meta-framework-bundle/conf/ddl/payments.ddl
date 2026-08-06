@@ -1,0 +1,10 @@
+payment_id STRING,
+customer_id STRING,
+order_id STRING,
+amount STRING,
+currency STRING,
+payment_method STRING,
+payment_status STRING,
+transaction_date STRING,
+processor_response_code STRING,
+merchant_id STRING

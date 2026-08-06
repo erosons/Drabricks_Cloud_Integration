@@ -1,0 +1,518 @@
+[
+  {
+    "_comment": "UC1: CloudFiles CSV - Basic ingestion with DQE, quarantine, CDC SCD Type 2",
+    "data_flow_id": "100",
+    "data_flow_group": "uc1_cloudfiles",
+    "source_system": "SFTP",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_database": "APP",
+      "source_table": "ORDERS",
+      "source_path_dev": "{uc_volume_path}/test_data/uc1_cloudfiles/orders",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/orders.ddl",
+      "source_metadata": {
+        "include_autoloader_metadata_column": "True",
+        "autoloader_metadata_col_name": "source_metadata",
+        "select_metadata_cols": {
+          "input_file_name": "_metadata.file_name",
+          "input_file_path": "_metadata.file_path"
+        }
+      }
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "orders",
+    "bronze_table_comment": "Orders bronze table - raw CSV ingestion",
+    "bronze_reader_options": {
+      "cloudFiles.format": "csv",
+      "cloudFiles.rescuedDataColumn": "_rescued_data",
+      "header": "true",
+      "cloudFiles.schemaEvolutionMode": "rescue"
+    },
+    "bronze_table_properties": {
+      "pipelines.autoOptimize.managed": "true"
+    },
+    "bronze_cluster_by": ["order_id", "order_date"],
+    "bronze_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc1_orders/bronze_expectations.json",
+    "bronze_catalog_quarantine_dev": "{uc_catalog_name}",
+    "bronze_database_quarantine_dev": "{bronze_schema}",
+    "bronze_quarantine_table": "orders_quarantine",
+    "bronze_quarantine_table_properties": {
+      "pipelines.reset.allowed": "false"
+    },
+    "bronze_quarantine_table_cluster_by": ["order_id"],
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "orders",
+    "silver_table_comment": "Orders silver - CDC SCD Type 2",
+    "silver_cdc_apply_changes": {
+      "keys": ["order_id"],
+      "sequence_by": "updated_at",
+      "scd_type": "2",
+      "apply_as_deletes": "operation = 'DELETE'",
+      "except_column_list": ["operation", "updated_at", "_rescued_data"]
+    },
+    "silver_cluster_by": ["order_id", "customer_id"],
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations.json",
+    "silver_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc1_orders/silver_expectations.json"
+  },
+  {
+    "_comment": "UC2: Kafka Source with Delta + Kafka Sinks",
+    "data_flow_id": "200",
+    "data_flow_group": "uc2_kafka",
+    "source_system": "IoT_Sensors",
+    "source_format": "kafka",
+    "source_details": {
+      "source_schema_path": "{uc_volume_path}/conf/ddl/iot_events.ddl",
+      "subscribe": "iot-sensor-events",
+      "kafka.security.protocol": "SASL_SSL",
+      "kafka.sasl.mechanism": "PLAIN",
+      "kafka_source_servers_secrets_scope_name": "sdp_meta_kafka",
+      "kafka_source_servers_secrets_scope_key": "bootstrap_servers"
+    },
+    "bronze_reader_options": {
+      "startingOffsets": "earliest",
+      "maxOffsetsPerTrigger": "50000",
+      "failOnDataLoss": "false",
+      "kafka.request.timeout.ms": "60000",
+      "kafka.session.timeout.ms": "60000"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "iot_events",
+    "bronze_table_comment": "IoT sensor events from Kafka",
+    "bronze_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc2_kafka/bronze_expectations.json",
+    "bronze_catalog_quarantine_dev": "{uc_catalog_name}",
+    "bronze_database_quarantine_dev": "{bronze_schema}",
+    "bronze_quarantine_table": "iot_events_quarantine",
+    "bronze_sinks": [
+      {
+        "name": "iot_events_kafka_sink",
+        "format": "kafka",
+        "options": {
+          "kafka_sink_servers_secret_scope_name": "sdp_meta_kafka",
+          "kafka_sink_servers_secret_scope_key": "sink_bootstrap_servers",
+          "kafka.security.protocol": "SASL_SSL",
+          "topic": "iot-events-processed"
+        },
+        "select_exp": ["value"],
+        "where_clause": "value is not null"
+      },
+      {
+        "name": "iot_events_delta_sink",
+        "format": "delta",
+        "options": {
+          "path": "/Volumes/{uc_catalog_name}/{bronze_schema}/sdp_meta_volume/data/sink/iot"
+        },
+        "select_exp": ["value"],
+        "where_clause": "value is not null"
+      }
+    ]
+  },
+  {
+    "_comment": "UC3: EventHub Source - IoT streaming ingestion",
+    "data_flow_id": "300",
+    "data_flow_group": "uc3_eventhub",
+    "source_system": "Azure_IoT_Hub",
+    "source_format": "eventhub",
+    "source_details": {
+      "source_schema_path": "{uc_volume_path}/conf/ddl/eventhub_telemetry.ddl",
+      "eventhub.accessKeyName": "listen-policy",
+      "eventhub.name": "telemetry-hub",
+      "eventhub.accessKeySecretName": "eh-access-key",
+      "eventhub.secretsScopeName": "sdp_meta_eventhub",
+      "kafka.sasl.mechanism": "PLAIN",
+      "kafka.security.protocol": "SASL_SSL",
+      "eventhub.namespace": "sdp-meta-test-ns",
+      "eventhub.port": "9093"
+    },
+    "bronze_reader_options": {
+      "maxOffsetsPerTrigger": "50000",
+      "startingOffsets": "earliest",
+      "failOnDataLoss": "false",
+      "kafka.request.timeout.ms": "60000",
+      "kafka.session.timeout.ms": "60000"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "telemetry_events",
+    "bronze_table_comment": "Telemetry events from Azure EventHub",
+    "bronze_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc3_eventhub/bronze_expectations.json",
+    "bronze_catalog_quarantine_dev": "{uc_catalog_name}",
+    "bronze_database_quarantine_dev": "{bronze_schema}",
+    "bronze_quarantine_table": "telemetry_events_quarantine",
+    "bronze_append_flows": [
+      {
+        "name": "telemetry_bronze_append_flow",
+        "create_streaming_table": false,
+        "source_format": "eventhub",
+        "source_details": {
+          "source_schema_path": "{uc_volume_path}/conf/ddl/eventhub_telemetry.ddl",
+          "eventhub.accessKeyName": "listen-policy",
+          "eventhub.name": "telemetry-hub-overflow",
+          "eventhub.accessKeySecretName": "eh-access-key",
+          "eventhub.secretsScopeName": "sdp_meta_eventhub",
+          "kafka.sasl.mechanism": "PLAIN",
+          "kafka.security.protocol": "SASL_SSL",
+          "eventhub.namespace": "sdp-meta-test-ns",
+          "eventhub.port": "9093"
+        },
+        "reader_options": {
+          "maxOffsetsPerTrigger": "50000",
+          "startingOffsets": "earliest",
+          "failOnDataLoss": "false"
+        },
+        "once": false
+      }
+    ]
+  },
+  {
+    "_comment": "UC4a: Snapshot CDC - Delta source with SCD Type 2",
+    "data_flow_id": "400",
+    "data_flow_group": "uc4_snapshot",
+    "source_system": "delta",
+    "source_format": "snapshot",
+    "source_details": {
+      "snapshot_format": "delta",
+      "source_catalog_dev": "{uc_catalog_name}",
+      "source_table": "source_products_snapshot",
+      "source_database": "{uc_catalog_name}.{bronze_schema}"
+    },
+    "bronze_database_dev": "{uc_catalog_name}.{bronze_schema}",
+    "bronze_table": "products_snapshot",
+    "bronze_apply_changes_from_snapshot": {
+      "keys": ["product_id"],
+      "scd_type": "2"
+    },
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "products",
+    "silver_table_comment": "Products silver - snapshot CDC SCD Type 2",
+    "silver_apply_changes_from_snapshot": {
+      "keys": ["product_id"],
+      "scd_type": "2"
+    },
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations.json"
+  },
+  {
+    "_comment": "UC4b: Snapshot CDC - CSV file-based snapshots with SCD Type 1",
+    "data_flow_id": "401",
+    "data_flow_group": "uc4_snapshot",
+    "source_system": "file_export",
+    "source_format": "snapshot",
+    "source_details": {
+      "source_path_dev": "{uc_volume_path}/test_data/uc4_snapshot/stores/LOAD_",
+      "snapshot_format": "csv"
+    },
+    "bronze_reader_options": {
+      "header": "true"
+    },
+    "bronze_database_dev": "{uc_catalog_name}.{bronze_schema}",
+    "bronze_table": "stores_snapshot",
+    "bronze_apply_changes_from_snapshot": {
+      "keys": ["store_id"],
+      "scd_type": "1"
+    },
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "stores",
+    "silver_table_comment": "Stores silver - snapshot CDC SCD Type 1",
+    "silver_apply_changes_from_snapshot": {
+      "keys": ["store_id"],
+      "scd_type": "1"
+    },
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations.json"
+  },
+  {
+    "_comment": "UC5a: Multi-Source CDC - US region bronze",
+    "data_flow_id": "500",
+    "data_flow_group": "uc5_multi_cdc",
+    "source_system": "RegionalCDC-US",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_database": "APP",
+      "source_table": "CUSTOMERS_US",
+      "source_path_dev": "{uc_volume_path}/test_data/uc5_multi_cdc/customers_us",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/customers_us.ddl"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "customers_us_cdc",
+    "bronze_reader_options": {
+      "cloudFiles.format": "json",
+      "cloudFiles.inferColumnTypes": "true",
+      "cloudFiles.rescuedDataColumn": "_rescued_data"
+    },
+    "bronze_table_properties": {
+      "pipelines.autoOptimize.managed": "true"
+    }
+  },
+  {
+    "_comment": "UC5b: Multi-Source CDC - EU region bronze",
+    "data_flow_id": "501",
+    "data_flow_group": "uc5_multi_cdc",
+    "source_system": "RegionalCDC-EU",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_database": "APP",
+      "source_table": "CUSTOMERS_EU",
+      "source_path_dev": "{uc_volume_path}/test_data/uc5_multi_cdc/customers_eu",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/customers_eu.ddl"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "customers_eu_cdc",
+    "bronze_reader_options": {
+      "cloudFiles.format": "json",
+      "cloudFiles.inferColumnTypes": "true",
+      "cloudFiles.rescuedDataColumn": "_rescued_data"
+    }
+  },
+  {
+    "_comment": "UC5c: Multi-Source CDC - APAC region bronze + multi-source silver merge",
+    "data_flow_id": "502",
+    "data_flow_group": "uc5_multi_cdc",
+    "source_system": "RegionalCDC-APAC",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_database": "APP",
+      "source_table": "CUSTOMERS_APAC",
+      "source_path_dev": "{uc_volume_path}/test_data/uc5_multi_cdc/customers_apac",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/customers_apac.ddl"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "customers_apac_cdc",
+    "bronze_reader_options": {
+      "cloudFiles.format": "json",
+      "cloudFiles.inferColumnTypes": "true",
+      "cloudFiles.rescuedDataColumn": "_rescued_data"
+    },
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "customers_unified",
+    "silver_table_comment": "Unified customers from US, EU, APAC regions",
+    "silver_table_properties": {
+      "pipelines.reset.allowed": "false"
+    },
+    "silver_cdc_apply_changes_flows": {
+      "keys": ["customer_id"],
+      "sequence_by": "operation_date",
+      "scd_type": "1",
+      "apply_as_deletes": "operation = 'DELETE'",
+      "except_column_list": ["operation", "operation_date", "_rescued_data"],
+      "flows": [
+        {
+          "name": "customers_us_silver",
+          "source_format": "delta",
+          "source_details": {
+            "source_catalog": "{uc_catalog_name}",
+            "source_database": "{bronze_schema}",
+            "source_table": "customers_us_cdc"
+          },
+          "select_exp": [
+            "id AS customer_id",
+            "firstname",
+            "lastname",
+            "email",
+            "address",
+            "'US' AS region",
+            "operation",
+            "operation_date",
+            "_rescued_data"
+          ]
+        },
+        {
+          "name": "customers_eu_silver",
+          "source_format": "delta",
+          "source_details": {
+            "source_catalog": "{uc_catalog_name}",
+            "source_database": "{bronze_schema}",
+            "source_table": "customers_eu_cdc"
+          },
+          "select_exp": [
+            "customer_id AS customer_id",
+            "given_name AS firstname",
+            "family_name AS lastname",
+            "email_address AS email",
+            "postal_address AS address",
+            "'EU' AS region",
+            "CASE WHEN change_type='INSERT' THEN 'APPEND' WHEN change_type='UPDATE' THEN 'UPDATE' WHEN change_type='DELETE' THEN 'DELETE' END AS operation",
+            "change_ts AS operation_date",
+            "_rescued_data"
+          ]
+        },
+        {
+          "name": "customers_apac_silver",
+          "source_format": "delta",
+          "source_details": {
+            "source_catalog": "{uc_catalog_name}",
+            "source_database": "{bronze_schema}",
+            "source_table": "customers_apac_cdc"
+          },
+          "select_exp": [
+            "cust_id AS customer_id",
+            "fname AS firstname",
+            "lname AS lastname",
+            "mail AS email",
+            "addr AS address",
+            "'APAC' AS region",
+            "CASE WHEN op='I' THEN 'APPEND' WHEN op='U' THEN 'UPDATE' WHEN op='D' THEN 'DELETE' END AS operation",
+            "op_time AS operation_date",
+            "_rescued_data"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "_comment": "UC6a: Silver Fanout - Single bronze source, multiple filtered silver tables",
+    "data_flow_id": "600",
+    "data_flow_group": "uc6_fanout",
+    "source_system": "ERP",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_path_dev": "{uc_volume_path}/test_data/uc6_fanout/vehicles"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "vehicles",
+    "bronze_table_comment": "All vehicles bronze table",
+    "bronze_reader_options": {
+      "cloudFiles.format": "csv",
+      "cloudFiles.rescuedDataColumn": "_rescued_data",
+      "header": "true"
+    },
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "vehicles_usa",
+    "silver_table_comment": "USA vehicles filtered from bronze",
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations_fanout.json"
+  },
+  {
+    "_comment": "UC6b: Silver Fanout - Germany filter",
+    "data_flow_id": "601",
+    "data_flow_group": "uc6_fanout",
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "vehicles",
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "vehicles_germany",
+    "silver_table_comment": "Germany vehicles filtered from bronze",
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations_fanout.json"
+  },
+  {
+    "_comment": "UC6c: Silver Fanout - Japan filter",
+    "data_flow_id": "602",
+    "data_flow_group": "uc6_fanout",
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "vehicles",
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "vehicles_japan",
+    "silver_table_comment": "Japan vehicles filtered from bronze",
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations_fanout.json"
+  },
+  {
+    "_comment": "UC7: Row Filters - UC-level row security on bronze and silver",
+    "data_flow_id": "700",
+    "data_flow_group": "uc7_row_filter",
+    "source_system": "HR_System",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_path_dev": "{uc_volume_path}/test_data/uc7_row_filter/employees",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/employees.ddl"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "employees",
+    "bronze_table_comment": "Employees bronze with row-level security",
+    "bronze_reader_options": {
+      "cloudFiles.format": "csv",
+      "cloudFiles.rescuedDataColumn": "_rescued_data",
+      "header": "true"
+    },
+    "bronze_cluster_by_auto": true,
+    "bronze_row_filter": "ROW FILTER {uc_catalog_name}.{bronze_schema}.department_filter ON (department)",
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "employees",
+    "silver_table_comment": "Employees silver with row-level security",
+    "silver_cluster_by_auto": true,
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations.json",
+    "silver_row_filter": "ROW FILTER {uc_catalog_name}.{silver_schema}.department_filter ON (department)"
+  },
+  {
+    "_comment": "UC8: Append Flows - Multiple cloudFiles sources into single bronze table",
+    "data_flow_id": "800",
+    "data_flow_group": "uc8_append_flows",
+    "source_system": "Payments",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_database": "APP",
+      "source_table": "PAYMENTS",
+      "source_path_dev": "{uc_volume_path}/test_data/uc8_append/payments_primary",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/payments.ddl"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "payments",
+    "bronze_table_comment": "Payments bronze with multiple append flows",
+    "bronze_reader_options": {
+      "cloudFiles.format": "json",
+      "cloudFiles.inferColumnTypes": "true",
+      "cloudFiles.rescuedDataColumn": "_rescued_data"
+    },
+    "bronze_append_flows": [
+      {
+        "name": "payments_secondary_flow",
+        "create_streaming_table": false,
+        "source_format": "cloudFiles",
+        "source_details": {
+          "source_path_dev": "{uc_volume_path}/test_data/uc8_append/payments_secondary",
+          "source_schema_path": "{uc_volume_path}/conf/ddl/payments.ddl"
+        },
+        "reader_options": {
+          "cloudFiles.format": "json",
+          "cloudFiles.inferColumnTypes": "true",
+          "cloudFiles.rescuedDataColumn": "_rescued_data"
+        },
+        "once": false
+      },
+      {
+        "name": "payments_tertiary_flow",
+        "create_streaming_table": false,
+        "source_format": "cloudFiles",
+        "source_details": {
+          "source_path_dev": "{uc_volume_path}/test_data/uc8_append/payments_tertiary",
+          "source_schema_path": "{uc_volume_path}/conf/ddl/payments.ddl"
+        },
+        "reader_options": {
+          "cloudFiles.format": "json",
+          "cloudFiles.inferColumnTypes": "true",
+          "cloudFiles.rescuedDataColumn": "_rescued_data"
+        },
+        "once": false
+      }
+    ],
+    "bronze_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc8_append/bronze_expectations.json"
+  },
+  {
+    "_comment": "UC9: Delta Source - Table-to-table streaming replication",
+    "data_flow_id": "900",
+    "data_flow_group": "uc9_delta",
+    "source_system": "upstream_delta",
+    "source_format": "delta",
+    "source_details": {
+      "source_database": "{uc_catalog_name}.{bronze_schema}",
+      "source_table": "upstream_inventory"
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "inventory_replica",
+    "bronze_table_comment": "Inventory replica from upstream delta table",
+    "bronze_cluster_by": ["sku", "warehouse_id"]
+  }
+]

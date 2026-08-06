@@ -1,0 +1,11 @@
+customer_id STRING,
+given_name STRING,
+family_name STRING,
+email_address STRING,
+postal_address STRING,
+city STRING,
+country_code STRING,
+postcode STRING,
+phone_number STRING,
+change_type STRING,
+change_ts STRING

@@ -156,7 +156,8 @@ async def run(cfg: dict) -> None:
         log.error("ORDER_SIZE_USD=0 and no live price — cannot compute SL/TP. Set ORDER_SIZE_USD in pair env.")
         raise SystemExit(1)
 
-    cfg["stop_loss_usd"]   = _order_usd * cfg["stop_loss_pct"]    / 100.0
+    if cfg["stop_loss_usd"] <= 0:
+        cfg["stop_loss_usd"] = _order_usd * cfg["stop_loss_pct"] / 100.0
     cfg["take_profit_usd"] = _order_usd * cfg["profit_target_pct"] / 100.0
     _tp_usd = cfg["take_profit_usd"]
 

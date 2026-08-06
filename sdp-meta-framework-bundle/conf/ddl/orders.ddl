@@ -1,0 +1,10 @@
+order_id STRING,
+customer_id STRING,
+order_date STRING,
+product_id STRING,
+quantity STRING,
+unit_price STRING,
+amount STRING,
+currency STRING,
+operation STRING,
+updated_at STRING

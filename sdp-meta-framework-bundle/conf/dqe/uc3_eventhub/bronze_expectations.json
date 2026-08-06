@@ -1,0 +1,9 @@
+{
+  "expect": {
+    "valid_body": "body IS NOT NULL",
+    "valid_enqueuedTime": "enqueuedTime IS NOT NULL"
+  },
+  "expect_or_quarantine": {
+    "quarantine_empty_body": "body IS NULL OR LENGTH(body) = 0"
+  }
+}

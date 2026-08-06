@@ -300,6 +300,103 @@ def _print_failing(coins: List[Coin]) -> None:
                  c.vol_mc_pct, " · ".join(reasons))
 
 
+# ── Gate functions (used by launcher) ────────────────────────────────────────
+
+# Kraken internal names → standard symbol
+_KRAKEN_LEGACY: dict[str, str] = {
+    "XXBT": "BTC", "XETH": "ETH", "XXRP": "XRP",
+    "XXDG": "DOGE", "XXLM": "XLM", "XZEC": "ZEC", "XXMR": "XMR",
+}
+
+
+def get_open_position_symbols(env_path: str = ".env", min_qty: float = 0.01) -> Set[str]:
+    """
+    Query Kraken Balance and return the set of configured symbols that have
+    an open position (qty >= min_qty).  These pairs must always be started by
+    the launcher so their SL/TP continues to be monitored.
+    """
+    import base64, hashlib, hmac, json as _json, time as _time
+
+    key = secret = ""
+    try:
+        for line in Path(env_path).read_text().splitlines():
+            line = line.strip()
+            if "=" in line and not line.startswith("#"):
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.split("#")[0].strip()
+                if k == "KRAKEN_API_KEY":    key = v
+                elif k == "KRAKEN_API_SECRET": secret = v
+    except Exception:
+        return set()
+
+    if not key or not secret:
+        return set()
+
+    try:
+        urlpath  = "/0/private/Balance"
+        nonce    = str(int(_time.time_ns() // 1_000))
+        postdata = f"nonce={nonce}"
+        msg = urlpath.encode() + hashlib.sha256((nonce + postdata).encode()).digest()
+        sig = base64.b64encode(
+            hmac.new(base64.b64decode(secret), msg, hashlib.sha512).digest()
+        ).decode()
+        req = urllib.request.Request(
+            "https://api.kraken.com" + urlpath,
+            data=postdata.encode(),
+            headers={"API-Key": key, "API-Sign": sig,
+                     "Content-Type": "application/x-www-form-urlencoded"},
+        )
+        bal = _json.loads(urllib.request.urlopen(req, timeout=15).read()).get("result", {})
+    except Exception as exc:
+        print(f"[SCANNER-GATE] Balance check failed: {exc}", flush=True)
+        return set()
+
+    configured = _configured_symbols()
+    open_syms: Set[str] = set()
+    for bal_key, qty_str in bal.items():
+        if bal_key == "ZUSD":
+            continue
+        sym = _KRAKEN_LEGACY.get(bal_key, bal_key)
+        if float(qty_str or 0) >= min_qty and sym in configured:
+            open_syms.add(sym)
+
+    return open_syms
+
+
+def eligible_kraken_pairs() -> Set[str]:
+    """
+    Return the set of configured symbols that pass all eligibility criteria
+    and are listed on Kraken. Called by launcher.py to decide which bots to start.
+
+    Eligibility: MC≥$300M  Vol24h≥$1M  V/MC≥5%  listed on Kraken
+    Falls back to the full configured set if any fetch fails.
+    """
+    print("[SCANNER-GATE] Fetching exchange listings ...", flush=True)
+    kraken    = _kraken_symbols()
+    binance   = _binance_symbols()
+    coinbase  = _coinbase_symbols()
+    configured = _configured_symbols()
+    print(f"[SCANNER-GATE] Kraken={len(kraken)}  Configured={len(configured)}", flush=True)
+
+    if not kraken:
+        print("[SCANNER-GATE] Kraken symbol fetch failed — passing all configured pairs", flush=True)
+        return configured
+
+    print(f"[SCANNER-GATE] Fetching CMC top {CMC_PAGE_SIZE} by market cap ...", flush=True)
+    coins = _fetch_coins(kraken, binance, coinbase, configured)
+
+    if not coins:
+        print("[SCANNER-GATE] CMC fetch failed — passing all configured pairs", flush=True)
+        return configured
+
+    eligible = {c.symbol for c in coins if c.eligible and c.on_kraken and c.symbol in configured}
+    skipped  = configured - eligible
+    print(f"[SCANNER-GATE] Eligible: {len(eligible)}  Skipped (failed criteria): {len(skipped)}", flush=True)
+    if skipped:
+        print(f"[SCANNER-GATE] Skipped pairs: {sorted(skipped)}", flush=True)
+    return eligible if eligible else configured
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:

@@ -47,7 +47,7 @@ products:
     months: [H, M, U, Z]                # quarterly: Mar, Jun, Sep, Dec
     cme_slug: equities/sp/micro-e-mini-sandp-500
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
@@ -68,9 +68,9 @@ products:
     months: [H, M, U, Z]
     cme_slug: equities/sp/e-mini-sandp500
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
-      stop_loss_usd: 100.0
+      stop_loss_usd: 500.0
       risk_reward_ratio: 3.0
       partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
       breakeven_after_t1: true
@@ -89,7 +89,7 @@ products:
     months: [H, M, U, Z]
     cme_slug: equities/nasdaq/micro-e-mini-nasdaq-100
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
@@ -110,9 +110,9 @@ products:
     months: [H, M, U, Z]
     cme_slug: equities/nasdaq/e-mini-nasdaq-100
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
-      stop_loss_usd: 100.0
+      stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
       partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
       breakeven_after_t1: true
@@ -131,7 +131,7 @@ products:
     months: [H, M, U, Z]
     cme_slug: equities/dow-jones/micro-e-mini-dow
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
@@ -152,9 +152,9 @@ products:
     months: [H, M, U, Z]
     cme_slug: equities/dow-jones/e-mini-dow
     risk:
-      max_contracts: 2
+      max_contracts: 1
       risk_per_trade_pct: 0.5
-      stop_loss_usd: 100.0
+      stop_loss_usd: 500.0
       risk_reward_ratio: 3.0
       partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
       breakeven_after_t1: true

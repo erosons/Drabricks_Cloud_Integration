@@ -1,0 +1,11 @@
+employee_id STRING,
+first_name STRING,
+last_name STRING,
+email STRING,
+department STRING,
+job_title STRING,
+hire_date STRING,
+salary STRING,
+manager_id STRING,
+location STRING,
+status STRING

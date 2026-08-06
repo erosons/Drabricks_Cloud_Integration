@@ -1,0 +1,18 @@
+[Unit]
+Description=Kraken Market Scanner (runs every 5 minutes)
+After=network-online.target kraken-bot.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kraken
+WorkingDirectory=/opt/kraken_bot
+EnvironmentFile=/opt/kraken_bot/.env
+ExecStart=/opt/kraken_bot/venv/bin/python scanner_cron.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

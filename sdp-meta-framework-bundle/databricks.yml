@@ -1,0 +1,50 @@
+# =============================================================================
+# SDP-META Framework + Bundle (Unified Monorepo)
+# =============================================================================
+# This bundle combines the SDP-META framework source code with the ingestion
+# use case configurations. Two key workflows:
+#   1. Framework change → wheel is rebuilt automatically on `bundle deploy`
+#   2. Use case change → new pipelines/jobs are created on `bundle deploy`
+# =============================================================================
+
+bundle:
+  name: sdp-meta-framework-bundle
+
+# ---------------------------------------------------------------------------
+# Artifacts: Auto-build the SDP-META wheel from framework/ on every deploy
+# ---------------------------------------------------------------------------
+# When you run `databricks bundle deploy`, DAB will:
+#   1. Run `pip wheel --no-deps` on the framework/ directory
+#   2. Upload the resulting .whl to the workspace file system
+#   3. Make it available via ${artifacts.sdp_meta_wheel.files[0].remote_path}
+# ---------------------------------------------------------------------------
+artifacts:
+  sdp_meta_wheel:
+    type: whl
+    path: ./framework
+    # build command is optional - DAB auto-detects setup.py/pyproject.toml
+    # Uncomment below only if you need custom build args:
+    # build: pip wheel --no-deps --wheel-dir ./framework/dist ./framework
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://e2-demo-field-eng.cloud.databricks.com
+    variables:
+      uc_catalog_name: users
+      env: dev
+
+  prod:
+    mode: production
+    workspace:
+      host: https://e2-demo-field-eng.cloud.databricks.com
+    variables:
+      uc_catalog_name: prod_catalog
+      env: prod
+    run_as:
+      service_principal_name: sdp-meta-prod-sp

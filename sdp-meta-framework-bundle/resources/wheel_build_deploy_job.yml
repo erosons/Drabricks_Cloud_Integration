@@ -1,0 +1,83 @@
+# =============================================================================
+# Wheel Build & Upload Job
+# =============================================================================
+# Triggered when framework/ source changes. Builds the wheel from setup.py
+# and uploads it to the UC Volume so pipelines can %pip install it.
+#
+# Workflow:
+#   1. build_wheel: pip wheel from framework/ source
+#   2. upload_to_volume: copy .whl to UC Volume path
+#   3. onboard_specs: re-run onboarding to refresh dataflowspec tables
+#
+# This job is idempotent - safe to re-run on every framework change.
+# =============================================================================
+
+resources:
+  jobs:
+    wheel_build_and_deploy:
+      name: "[${var.env}] SDP-META: Build Wheel & Deploy"
+      description: |
+        Builds the SDP-META wheel from framework/ source and uploads to UC Volume.
+        Run this when framework code changes. Pipelines will pick up the new wheel
+        on their next refresh.
+      tags:
+        sdp_meta: "true"
+        purpose: wheel_build
+      schedule:
+        # Manual trigger by default - uncomment for CI/CD automation
+        # quartz_cron_expression: "0 0 6 * * ?"
+        # timezone_id: America/New_York
+        pause_status: PAUSED
+
+      tasks:
+        - task_key: build_wheel
+          description: "Build the SDP-META wheel from framework/ source code"
+          notebook_task:
+            notebook_path: ${workspace.file_path}/notebooks/build_wheel.py
+            base_parameters:
+              framework_path: ${workspace.file_path}/framework
+              volume_path: ${var.uc_volume_path}
+          environment_key: wheel_build_env
+
+        - task_key: upload_to_volume
+          description: "Upload built wheel to UC Volume for pipeline consumption"
+          depends_on:
+            - task_key: build_wheel
+          notebook_task:
+            notebook_path: ${workspace.file_path}/notebooks/upload_wheel_to_volume.py
+            base_parameters:
+              volume_wheel_path: ${var.sdp_meta_dependency}
+              framework_path: ${workspace.file_path}/framework
+          environment_key: wheel_build_env
+
+        - task_key: onboard_specs
+          description: "Re-run onboarding to refresh dataflowspec tables with latest wheel"
+          depends_on:
+            - task_key: upload_to_volume
+          python_wheel_task:
+            package_name: databricks_labs_sdp_meta
+            entry_point: run
+            named_parameters:
+              database: ${var.uc_catalog_name}.${var.sdp_meta_schema}
+              onboarding_file_path: ${var.uc_volume_path}/conf/onboarding_all_usecases.json
+              bronze_dataflowspec_table: ${var.bronze_dataflowspec_table}
+              silver_dataflowspec_table: ${var.silver_dataflowspec_table}
+              uc_enabled: "true"
+              import_author: samson.eromonsei@databricks.com
+              version: v1
+              onboard_layer: bronze_silver
+              overwrite: "True"
+              env: ${var.env}
+          libraries:
+            - whl: ${var.sdp_meta_dependency}
+          environment_key: wheel_build_env
+
+      environments:
+        - environment_key: wheel_build_env
+          spec:
+            client: "1"
+            dependencies:
+              - databricks-sdk>=0.20
+              - PyYAML>=6.0
+              - setuptools>=65
+              - wheel>=0.37

@@ -1,0 +1,64 @@
+# =============================================================================
+# SDP-META Onboarding Job
+# =============================================================================
+# Reads conf/onboarding_all_usecases.json and populates the bronze/silver
+# dataflowspec tables in Unity Catalog. Run this when:
+#   - Adding new use cases (new entries in onboarding JSON)
+#   - Changing source configurations
+#   - First-time setup after infrastructure provisioning
+# =============================================================================
+
+resources:
+  jobs:
+    sdp_meta_onboarding:
+      name: "[${var.env}] SDP-META: Onboard All Use Cases"
+      description: |
+        Loads all use case configurations from onboarding_all_usecases.json
+        into bronze_dataflowspec_table and silver_dataflowspec_table.
+        These spec tables drive the metadata-driven pipelines.
+      tags:
+        sdp_meta: "true"
+        purpose: onboarding
+
+      tasks:
+        - task_key: stage_conf
+          description: "Copy bundle conf/ to UC Volume for serverless access"
+          python_wheel_task:
+            package_name: databricks_labs_sdp_meta
+            entry_point: stage_conf
+            named_parameters:
+              source_dir: ${workspace.file_path}/conf
+              target_volume: ${var.uc_volume_path}/conf
+          libraries:
+            - whl: ${var.sdp_meta_dependency}
+          environment_key: onboarding_env
+
+        - task_key: onboard_bronze_silver
+          description: "Onboard all use cases into dataflowspec tables"
+          depends_on:
+            - task_key: stage_conf
+          python_wheel_task:
+            package_name: databricks_labs_sdp_meta
+            entry_point: run
+            named_parameters:
+              database: ${var.uc_catalog_name}.${var.sdp_meta_schema}
+              onboarding_file_path: ${var.uc_volume_path}/conf/onboarding_all_usecases.json
+              bronze_dataflowspec_table: ${var.bronze_dataflowspec_table}
+              silver_dataflowspec_table: ${var.silver_dataflowspec_table}
+              uc_enabled: "true"
+              import_author: samson.eromonsei@databricks.com
+              version: v1
+              onboard_layer: bronze_silver
+              overwrite: "True"
+              env: ${var.env}
+          libraries:
+            - whl: ${var.sdp_meta_dependency}
+          environment_key: onboarding_env
+
+      environments:
+        - environment_key: onboarding_env
+          spec:
+            client: "1"
+            dependencies:
+              - databricks-sdk>=0.20
+              - PyYAML>=6.0

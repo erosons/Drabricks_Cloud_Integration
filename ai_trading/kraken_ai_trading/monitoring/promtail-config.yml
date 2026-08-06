@@ -1,0 +1,62 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/promtail-positions.yaml
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+scrape_configs:
+
+  # ── Per-pair log files (/logs/xrp.log, /logs/btc.log, etc.) ─────────────
+  - job_name: kraken_pairs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: kraken_pairs
+          __path__: /logs/*.log
+    pipeline_stages:
+      # Extract pair name from filename (xrp.log → pair=XRP)
+      - regex:
+          source: filename
+          expression: '.*/(?P<pair>[^/]+)\.log$'
+      - template:
+          source: pair
+          template: '{{ ToUpper .Value }}'
+      - labels:
+          pair:
+      # Parse log level from line
+      - regex:
+          expression: '.*\[(?P<level>INFO|WARNING|ERROR|DEBUG)\].*'
+      - labels:
+          level:
+
+  # ── Systemd journal — kraken-bot service ────────────────────────────────
+  - job_name: kraken_journal
+    journal:
+      path: /var/log/journal
+      matches: _SYSTEMD_UNIT=kraken-bot.service
+      labels:
+        job: kraken_journal
+        service: kraken-bot
+    pipeline_stages:
+      - regex:
+          expression: '.*\[(?P<pair>[A-Z0-9]+)\].*'
+      - labels:
+          pair:
+      - regex:
+          expression: '.*\[(?P<level>INFO|WARNING|ERROR|DEBUG)\].*'
+      - labels:
+          level:
+
+  # ── Systemd journal — scanner service ───────────────────────────────────
+  - job_name: kraken_scanner
+    journal:
+      path: /var/log/journal
+      matches: _SYSTEMD_UNIT=kraken-scanner.service
+      labels:
+        job: kraken_scanner
+        service: kraken-scanner

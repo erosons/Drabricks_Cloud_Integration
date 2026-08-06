@@ -1,0 +1,15 @@
+[Unit]
+Description=Kraken Account Exporter (balance + closed orders → Prometheus)
+After=network.target kraken-bot.service
+
+[Service]
+Type=simple
+User=kraken
+WorkingDirectory=/opt/kraken_bot
+EnvironmentFile=/opt/kraken_bot/.env
+ExecStart=/opt/kraken_bot/venv/bin/python /opt/kraken_bot/monitoring/kraken_account_exporter.py
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

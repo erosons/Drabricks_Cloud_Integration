@@ -1,0 +1,203 @@
+# ==============================================================================
+# ABAC/GBAC Governance Framework - Declarative Automation Bundle
+# ==============================================================================
+# This bundle deploys and tests the ABAC governance framework end-to-end:
+#   1. Creates test datasets with PII columns (DOB, email, phone)
+#   2. Applies existing governed tags to columns
+#   3. Deploys masking UDFs
+#   4. Creates ABAC column mask policies
+#   5. Validates enforcement via test queries
+#
+# Usage:
+#   databricks bundle validate --target dev
+#   databricks bundle deploy --target dev
+#   databricks bundle run governance_deploy --target dev
+# ==============================================================================
+
+bundle:
+  name: abac_governance_framework
+
+variables:
+  governance_catalog:
+    description: "Catalog where governance UDFs and test data live"
+    default: governance
+  governance_schema:
+    description: "Schema for policy functions"
+    default: policy_functions
+  test_catalog:
+    description: "Catalog for test data products"
+    default: general_use
+  test_schema:
+    description: "Schema for test data products"
+    default: customer
+  cleartext_group:
+    description: "Group with cleartext exception"
+    default: governance_cleartext_approved
+  masked_reader_group:
+    description: "Group that sees masked values"
+    default: governance_masked_reader
+
+workspace:
+  host: ${var.workspace_host}
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      workspace_host: "" # Auto-detected from CLI auth
+      governance_catalog: governance_dev
+      test_catalog: dev_general_use
+      test_schema: customer_test
+
+  staging:
+    variables:
+      workspace_host: ""
+      governance_catalog: governance
+      test_catalog: staging_general_use
+      test_schema: customer
+
+  prod:
+    variables:
+      workspace_host: ""
+      governance_catalog: governance
+      test_catalog: general_use
+      test_schema: customer
+
+resources:
+  jobs:
+    # =========================================================================
+    # Job 1: Deploy governance infrastructure (UDFs, tags, policies)
+    # =========================================================================
+    governance_deploy:
+      name: "[ABAC] Deploy Governance Framework"
+      description: |
+        Deploys the full ABAC governance framework:
+        - Creates test datasets with PII columns
+        - Applies governed tags (class.email_address, class.phone_number, class.date_of_birth)
+        - Deploys masking UDFs to governance schema
+        - Creates ABAC column mask policies
+      tags:
+        team: platform-governance
+        framework: abac
+        environment: ${bundle.target}
+      tasks:
+        - task_key: setup_test_data
+          description: "Create test tables with PII columns"
+          notebook_task:
+            notebook_path: ./notebooks/01_setup_test_data.py
+            base_parameters:
+              catalog: ${var.test_catalog}
+              schema: ${var.test_schema}
+          # Use serverless compute
+          environment_key: default
+
+        - task_key: apply_governed_tags
+          description: "Apply existing governed tags to table columns"
+          depends_on:
+            - task_key: setup_test_data
+          notebook_task:
+            notebook_path: ./notebooks/02_apply_governed_tags.py
+            base_parameters:
+              catalog: ${var.test_catalog}
+              schema: ${var.test_schema}
+          environment_key: default
+
+        - task_key: deploy_masking_udfs
+          description: "Create column mask UDFs in governance schema"
+          depends_on:
+            - task_key: apply_governed_tags
+          notebook_task:
+            notebook_path: ./notebooks/03_deploy_masking_udfs.py
+            base_parameters:
+              governance_catalog: ${var.governance_catalog}
+              governance_schema: ${var.governance_schema}
+          environment_key: default
+
+        - task_key: create_abac_policies
+          description: "Create ABAC column mask policies using tag matching"
+          depends_on:
+            - task_key: deploy_masking_udfs
+          notebook_task:
+            notebook_path: ./notebooks/04_create_abac_policies.py
+            base_parameters:
+              governance_catalog: ${var.governance_catalog}
+              governance_schema: ${var.governance_schema}
+              target_catalog: ${var.test_catalog}
+              target_schema: ${var.test_schema}
+              cleartext_group: ${var.cleartext_group}
+              masked_reader_group: ${var.masked_reader_group}
+          environment_key: default
+
+        - task_key: validate_enforcement
+          description: "Run validation tests to confirm masking works"
+          depends_on:
+            - task_key: create_abac_policies
+          notebook_task:
+            notebook_path: ./notebooks/05_validate_enforcement.py
+            base_parameters:
+              catalog: ${var.test_catalog}
+              schema: ${var.test_schema}
+          environment_key: default
+
+    # =========================================================================
+    # Job 2: Drift detection (scheduled)
+    # =========================================================================
+    governance_drift_check:
+      name: "[ABAC] Governance Drift Detection"
+      description: "Checks for drift between YAML config and UC platform state"
+      tags:
+        team: platform-governance
+        framework: abac
+      schedule:
+        quartz_cron_expression: "0 0 8 * * ?"  # Daily at 8 AM
+        timezone_id: UTC
+      tasks:
+        - task_key: drift_detection
+          notebook_task:
+            notebook_path: ./notebooks/06_drift_detection.py
+            base_parameters:
+              catalog: ${var.test_catalog}
+              schema: ${var.test_schema}
+          environment_key: default
+
+    # =========================================================================
+    # Job 3: Teardown (for testing cleanup)
+    # =========================================================================
+    governance_teardown:
+      name: "[ABAC] Teardown Test Environment"
+      description: "Removes test policies, tags, and data for clean re-runs"
+      tags:
+        team: platform-governance
+        framework: abac
+      tasks:
+        - task_key: teardown
+          notebook_task:
+            notebook_path: ./notebooks/99_teardown.py
+            base_parameters:
+              governance_catalog: ${var.governance_catalog}
+              governance_schema: ${var.governance_schema}
+              target_catalog: ${var.test_catalog}
+              target_schema: ${var.test_schema}
+          environment_key: default
+
+  # ===========================================================================
+  # Schemas (optional - Unity Catalog schema declarations)
+  # ===========================================================================
+  schemas:
+    governance_schema:
+      catalog_name: ${var.governance_catalog}
+      name: ${var.governance_schema}
+      comment: "ABAC governance policy functions and UDFs"
+
+    test_schema:
+      catalog_name: ${var.test_catalog}
+      name: ${var.test_schema}
+      comment: "Test data products for ABAC framework validation"
+
+environments:
+  default:
+    spec:
+      client: "1"
+      dependencies:
+        - pyyaml

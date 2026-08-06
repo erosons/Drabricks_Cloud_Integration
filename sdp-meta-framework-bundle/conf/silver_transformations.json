@@ -1,0 +1,46 @@
+[
+  {
+    "target_table": "orders",
+    "select_exp": [
+      "order_id",
+      "customer_id",
+      "CAST(order_date AS DATE) AS order_date",
+      "CAST(amount AS DECIMAL(10,2)) AS amount",
+      "status",
+      "operation",
+      "updated_at",
+      "_rescued_data"
+    ],
+    "where_clause": "order_id IS NOT NULL"
+  },
+  {
+    "target_table": "products",
+    "select_exp": [
+      "product_id",
+      "product_name",
+      "CAST(price AS DECIMAL(10,2)) AS price",
+      "category"
+    ]
+  },
+  {
+    "target_table": "stores",
+    "select_exp": [
+      "store_id",
+      "store_name",
+      "address",
+      "city",
+      "state"
+    ]
+  },
+  {
+    "target_table": "employees",
+    "select_exp": [
+      "employee_id",
+      "CONCAT(first_name, ' ', last_name) AS full_name",
+      "email",
+      "department",
+      "CAST(hire_date AS DATE) AS hire_date"
+    ],
+    "where_clause": "employee_id IS NOT NULL AND department IS NOT NULL"
+  }
+]

@@ -1,0 +1,339 @@
+# =============================================================================
+# SDP-META Pipelines - All 9 Use Cases (15 pipelines)
+# =============================================================================
+# Each use case has a bronze pipeline and optionally a silver pipeline.
+# Pipelines reference the wheel built from framework/ via sdp_meta_dependency.
+# Adding a new use case = add entry to onboarding JSON + add pipeline here.
+# =============================================================================
+
+resources:
+  pipelines:
+    # =========================================================================
+    # UC1: CloudFiles (CSV) - Bronze + Silver
+    # Features: AutoLoader, DQE (expect/drop/quarantine), liquid clustering,
+    #           schema DDL enforcement, silver CDC (SCD1)
+    # =========================================================================
+    pipeline_bronze_cloudfiles:
+      name: "[${var.env}] SDP-META Bronze: CloudFiles"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc1_cloudfiles
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    pipeline_silver_cloudfiles:
+      name: "[${var.env}] SDP-META Silver: CloudFiles"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.silver_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: silver
+        silver.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.silver_dataflowspec_table}
+        silver.group: uc1_cloudfiles
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC2: Kafka - Bronze only
+    # Features: Kafka source, DQE, schema enforcement
+    # =========================================================================
+    pipeline_bronze_kafka:
+      name: "[${var.env}] SDP-META Bronze: Kafka"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc2_kafka
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC3: EventHub - Bronze only
+    # Features: EventHub source, DQE, schema enforcement
+    # =========================================================================
+    pipeline_bronze_eventhub:
+      name: "[${var.env}] SDP-META Bronze: EventHub"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc3_eventhub
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC4: Snapshot - Bronze + Silver
+    # Features: Delta snapshot source, CSV snapshot, apply_changes_from_snapshot
+    # =========================================================================
+    pipeline_bronze_snapshot:
+      name: "[${var.env}] SDP-META Bronze: Snapshot"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline_snapshot.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc4_snapshot
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    pipeline_silver_snapshot:
+      name: "[${var.env}] SDP-META Silver: Snapshot"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.silver_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline_snapshot.py
+      configuration:
+        layer: silver
+        silver.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.silver_dataflowspec_table}
+        silver.group: uc4_snapshot
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC5: Multi-Source CDC - Bronze + Silver
+    # Features: Multiple JSON sources (US/EU/APAC), multi-source CDC merge,
+    #           apply_changes with multiple flows
+    # =========================================================================
+    pipeline_bronze_multi_cdc:
+      name: "[${var.env}] SDP-META Bronze: Multi-CDC"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc5_multi_cdc
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    pipeline_silver_multi_cdc:
+      name: "[${var.env}] SDP-META Silver: Multi-CDC"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.silver_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: silver
+        silver.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.silver_dataflowspec_table}
+        silver.group: uc5_multi_cdc
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC6: Fanout - Bronze + Silver
+    # Features: 1 bronze -> N silver tables using where_clause fanout
+    # =========================================================================
+    pipeline_bronze_fanout:
+      name: "[${var.env}] SDP-META Bronze: Fanout"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc6_fanout
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    pipeline_silver_fanout:
+      name: "[${var.env}] SDP-META Silver: Fanout"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.silver_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: silver
+        silver.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.silver_dataflowspec_table}
+        silver.group: uc6_fanout
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC7: Row Filter - Bronze + Silver
+    # Features: bronze_row_filter, silver_row_filter, UDF-based filtering
+    # =========================================================================
+    pipeline_bronze_row_filter:
+      name: "[${var.env}] SDP-META Bronze: Row Filter"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc7_row_filter
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    pipeline_silver_row_filter:
+      name: "[${var.env}] SDP-META Silver: Row Filter"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.silver_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: silver
+        silver.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.silver_dataflowspec_table}
+        silver.group: uc7_row_filter
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC8: Append Flows - Bronze only
+    # Features: bronze_append_flows (multiple landing zones -> 1 table)
+    # =========================================================================
+    pipeline_bronze_append_flows:
+      name: "[${var.env}] SDP-META Bronze: Append Flows"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc8_append_flows
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+    # =========================================================================
+    # UC9: Delta Source - Bronze only
+    # Features: Delta table as source with CDF, upstream dependency tracking
+    # =========================================================================
+    pipeline_bronze_delta:
+      name: "[${var.env}] SDP-META Bronze: Delta"
+      catalog: ${var.uc_catalog_name}
+      target: ${var.bronze_schema}
+      channel: PREVIEW
+      libraries:
+        - notebook:
+            path: ${workspace.file_path}/notebooks/init_sdp_meta_pipeline.py
+      configuration:
+        layer: bronze
+        bronze.dataflowspecTable: ${var.uc_catalog_name}.${var.sdp_meta_schema}.${var.bronze_dataflowspec_table}
+        bronze.group: uc9_delta
+        bundle.sourcePath: ${workspace.file_path}/notebooks
+        sdp_meta_whl: ${var.sdp_meta_dependency}
+
+  # ===========================================================================
+  # Pipeline Execution Job - Runs all pipelines in dependency order
+  # ===========================================================================
+  jobs:
+    run_all_pipelines:
+      name: "[${var.env}] SDP-META: Run All Pipelines"
+      description: |
+        Executes all 15 pipelines in correct dependency order.
+        Bronze pipelines run first, then silver pipelines that depend on them.
+      tags:
+        sdp_meta: "true"
+        purpose: pipeline_execution
+
+      tasks:
+        # --- Bronze tasks (all run in parallel) ---
+        - task_key: bronze_cloudfiles
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_cloudfiles.id}
+
+        - task_key: bronze_kafka
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_kafka.id}
+
+        - task_key: bronze_eventhub
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_eventhub.id}
+
+        - task_key: bronze_snapshot
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_snapshot.id}
+
+        - task_key: bronze_multi_cdc
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_multi_cdc.id}
+
+        - task_key: bronze_fanout
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_fanout.id}
+
+        - task_key: bronze_row_filter
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_row_filter.id}
+
+        - task_key: bronze_append_flows
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_append_flows.id}
+
+        - task_key: bronze_delta
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_bronze_delta.id}
+
+        # --- Silver tasks (depend on their bronze counterparts) ---
+        - task_key: silver_cloudfiles
+          depends_on:
+            - task_key: bronze_cloudfiles
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_silver_cloudfiles.id}
+
+        - task_key: silver_snapshot
+          depends_on:
+            - task_key: bronze_snapshot
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_silver_snapshot.id}
+
+        - task_key: silver_multi_cdc
+          depends_on:
+            - task_key: bronze_multi_cdc
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_silver_multi_cdc.id}
+
+        - task_key: silver_fanout
+          depends_on:
+            - task_key: bronze_fanout
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_silver_fanout.id}
+
+        - task_key: silver_row_filter
+          depends_on:
+            - task_key: bronze_row_filter
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.pipeline_silver_row_filter.id}

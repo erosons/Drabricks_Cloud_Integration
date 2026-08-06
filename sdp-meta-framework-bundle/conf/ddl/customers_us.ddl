@@ -1,0 +1,11 @@
+id STRING,
+firstname STRING,
+lastname STRING,
+email STRING,
+address STRING,
+city STRING,
+state STRING,
+zip_code STRING,
+phone STRING,
+operation STRING,
+operation_date STRING

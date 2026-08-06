@@ -1,0 +1,17 @@
+{
+	"ulid": "01KSZT48QF3SN6STP511DG89CB",
+	"minTime": 1780238983899,
+	"maxTime": 1780243200000,
+	"stats": {
+		"numSamples": 330,
+		"numSeries": 15,
+		"numChunks": 15
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01KSZT48QF3SN6STP511DG89CB"
+		]
+	},
+	"version": 1
+}

@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -E '(aws ec2|aws iam|terraform|deploy\\.sh|systemctl.*kraken|journalctl.*kraken|ssh.*kraken)' >> /tmp/kraken_session_actions.log 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "LOGFILE=/tmp/kraken_session_actions.log; CHANGELOG=/workspaces/Drabricks_Cloud_Integration/ai_trading/kraken_ai_trading/CHANGELOG.md; if [ -s \"$LOGFILE\" ]; then date_str=$(date +%Y-%m-%d); printf '\\n## %s\\n' \"$date_str\" >> \"$CHANGELOG\"; while IFS= read -r cmd; do printf -- '- [CMD] %s\\n' \"$cmd\" >> \"$CHANGELOG\"; done < \"$LOGFILE\"; rm -f \"$LOGFILE\"; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

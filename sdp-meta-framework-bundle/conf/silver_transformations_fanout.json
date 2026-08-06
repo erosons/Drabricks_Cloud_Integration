@@ -1,0 +1,17 @@
+[
+  {
+    "target_table": "vehicles_usa",
+    "select_exp": ["*"],
+    "where_clause": "country = 'USA'"
+  },
+  {
+    "target_table": "vehicles_germany",
+    "select_exp": ["*"],
+    "where_clause": "country = 'Germany'"
+  },
+  {
+    "target_table": "vehicles_japan",
+    "select_exp": ["*"],
+    "where_clause": "country = 'Japan'"
+  }
+]

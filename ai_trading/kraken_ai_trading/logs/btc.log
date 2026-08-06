@@ -1,0 +1,15 @@
+
+=== BTC session 2026-05-25T12:25:37.478881 ===
+[BTC] 2026-05-25 12:25:38.087 [INFO] [BTC] main: *** DRY RUN — orders will be validated but NOT submitted ***
+[BTC] 2026-05-25 12:25:38.087 [INFO] [BTC] main: Fetching WebSocket token via REST...
+[BTC] 2026-05-25 12:25:38.752 [INFO] [BTC] main: Balance: {'FARTCOIN': '0.00000', 'XETH': '0.0000000000', 'XXBT': '0.0000000000', 'XXDG': '0.00000000', 'XXMR': '0.0000000000', 'XXRP': '0.00000950', 'XZEC': '0.0000000000', 'ZUSD': '481.4036'}
+[BTC] 2026-05-25 12:25:38.934 [INFO] [BTC] src.trading.risk: RiskManager init: SL=$5.00  TP=$15.00  trail_step=$3.75
+[BTC] 2026-05-25 12:25:38.934 [INFO] [BTC] main: Starting Kraken Order Flow Bot | symbol=BTC/USD size=0.0001 max_pos=0.001 dry_run=True
+[BTC] 2026-05-25 12:25:39.466 [INFO] [BTC] src.client.websocket: Connected to wss://ws-auth.kraken.com/v2
+[BTC] 2026-05-25 12:25:39.467 [INFO] [BTC] main: Authenticated executions subscription sent
+[BTC] 2026-05-25 12:25:40.480 [INFO] [BTC] src.client.websocket: Connected to wss://ws.kraken.com/v2
+[BTC] 2026-05-25 12:25:40.481 [INFO] [BTC] main: System status: [{'version': '2.0.10', 'system': 'online', 'api_version': 'v2', 'connection_id': 10880173519409128491}]
+[BTC] 2026-05-25 12:25:40.482 [INFO] [BTC] main: Public subscriptions sent for BTC/USD
+[BTC] 2026-05-25 12:25:41.077 [INFO] [BTC] main: Book snapshot BTC/USD  mid=77329.1500  spread=0.1000  imb=-0.200
+[BTC] 2026-05-25 12:38:48.015 [INFO] [BTC] main: Shutdown signal received — cancelling all orders and exiting
+[BTC] 2026-05-25 12:38:48.038 [INFO] [BTC] main: Shutdown signal received — cancelling all orders and exiting
