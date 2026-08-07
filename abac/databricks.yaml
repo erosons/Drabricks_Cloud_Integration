@@ -85,7 +85,7 @@ resources:
         - task_key: setup_test_data
           description: "Create test tables with PII columns"
           notebook_task:
-            notebook_path: ./notebooks/01_setup_test_data.py
+            notebook_path: ./src/notebooks/01_setup_test_data.py
             base_parameters:
               catalog: ${var.test_catalog}
               schema: ${var.test_schema}
@@ -97,7 +97,7 @@ resources:
           depends_on:
             - task_key: setup_test_data
           notebook_task:
-            notebook_path: ./notebooks/02_apply_governed_tags.py
+            notebook_path: ./src/notebooks/02_apply_governed_tags.py
             base_parameters:
               catalog: ${var.test_catalog}
               schema: ${var.test_schema}
@@ -108,7 +108,7 @@ resources:
           depends_on:
             - task_key: apply_governed_tags
           notebook_task:
-            notebook_path: ./notebooks/03_deploy_masking_udfs.py
+            notebook_path: ./src/notebooks/03_deploy_masking_udfs.py
             base_parameters:
               governance_catalog: ${var.governance_catalog}
               governance_schema: ${var.governance_schema}
@@ -119,7 +119,7 @@ resources:
           depends_on:
             - task_key: deploy_masking_udfs
           notebook_task:
-            notebook_path: ./notebooks/04_create_abac_policies.py
+            notebook_path: ./src/notebooks/04_create_abac_policies.py
             base_parameters:
               governance_catalog: ${var.governance_catalog}
               governance_schema: ${var.governance_schema}
@@ -134,7 +134,7 @@ resources:
           depends_on:
             - task_key: create_abac_policies
           notebook_task:
-            notebook_path: ./notebooks/05_validate_enforcement.py
+            notebook_path: ./src/notebooks/05_validate_enforcement.py
             base_parameters:
               catalog: ${var.test_catalog}
               schema: ${var.test_schema}
@@ -155,7 +155,7 @@ resources:
       tasks:
         - task_key: drift_detection
           notebook_task:
-            notebook_path: ./notebooks/06_drift_detection.py
+            notebook_path: ./src/notebooks/06_drift_detection.py
             base_parameters:
               catalog: ${var.test_catalog}
               schema: ${var.test_schema}
@@ -173,7 +173,7 @@ resources:
       tasks:
         - task_key: teardown
           notebook_task:
-            notebook_path: ./notebooks/99_teardown.py
+            notebook_path: ./src/notebooks/99_teardown.py
             base_parameters:
               governance_catalog: ${var.governance_catalog}
               governance_schema: ${var.governance_schema}

@@ -5,7 +5,7 @@
 # MAGIC - Email columns show masked values (`***@domain.com`)
 # MAGIC - Phone columns show masked values (`(***) ***-XXXX`)
 # MAGIC - Date of birth columns show year-only (`YYYY-01-01`)
-# MAGIC 
+# MAGIC
 # MAGIC **Note:** If running as a member of `governance_cleartext_approved`,
 # MAGIC you will see cleartext values. Remove yourself from that group to test masking.
 

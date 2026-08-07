@@ -14,7 +14,7 @@
 import yaml
 import os
 
-dbutils.widgets.text("config_path", "/Workspace/Users/samson.eromonsei@databricks.com/ABAC/configs", "Config Directory")
+dbutils.widgets.text("config_path", "/Workspace/Users/samson.eromonsei@databricks.com/abac/configs", "Config Directory")
 config_path = dbutils.widgets.get("config_path")
 
 print(f"Config directory: {config_path}")

@@ -46,21 +46,22 @@ ABAC policies, governed tags, masking UDFs, and RBAC grants to Unity Catalog.
 ```
 ABAC/
 ├── README.md                              # This file
+├── databricks.yaml                        # Layer 3: DAB deployment manifest
+├── main.py                                # Entry point / orchestrator
 ├── configs/
 │   ├── policies.yaml                      # Layer 1: Policy definitions
 │   └── securables.yaml                    # Layer 2: UC data targets + tag assignments
-├── bundle/
-│   ├── databricks.yaml                    # Layer 3: DAB deployment manifest
+├── src/
 │   └── notebooks/
 │       ├── 01_setup_test_data.py          # Create synthetic PII test table
-│       ├── 02_apply_governed_tags.py      # Apply class.* tags to columns
-│       ├── 03_deploy_masking_udfs.py      # Deploy mask_email, mask_phone, mask_dob
+│       ├── 02_apply_governed_tags.py      # Apply class.* tags + custom tags to columns
+│       ├── 03_deploy_masking_udfs.py      # Deploy mask_email, mask_phone, redact_full, etc.
 │       ├── 04_create_abac_policies.py     # CREATE POLICY with MATCH COLUMNS
 │       ├── 05_validate_enforcement.py     # Verify masking works at runtime
 │       ├── 06_drift_detection.py          # Scheduled drift checks
 │       └── 99_teardown.py                 # Clean teardown for re-testing
-├── governance_reconciliation_engine       # Layer 4: Enterprise reconciliation notebook
-└── governance_validation_tests            # Layer 5: Validation & audit notebook
+└── test/
+    └── ABAC Governance Validation Tests   # Validation & audit notebook
 ```
 
 ---
@@ -161,7 +162,7 @@ ABAC/
 
 ---
 
-### Layer 3: DAB Bundle (`bundle/databricks.yaml`)
+### Layer 3: DAB Bundle (`databricks.yaml`)
 
 **Purpose:** Declarative Automation Bundle for CI/CD deployment and testing.
 
@@ -174,8 +175,8 @@ ABAC/
 │                                                             │
 │  JOB: governance_deploy (5-task pipeline)                   │
 │    01_setup_test_data ──→ 02_apply_governed_tags            │
-│         ──→ 03_deploy_masking_udfs ──→ 04_create_policies   │
-│              ──→ 05_validate_enforcement                    │
+│       ──→ 03_deploy_masking_udfs ──→ 04_create_abac_policies│
+│            ──→ 05_validate_enforcement                      │
 │                                                             │
 │  JOB: governance_drift_check (daily scheduled)              │
 │    06_drift_detection (cron: 0 0 8 * * ?)                   │
@@ -723,8 +724,8 @@ This framework uses **existing** workspace governed tags from the `class.*` name
 ### Deploy with DAB Bundle
 
 ```bash
-# Navigate to the bundle directory
-cd ABAC/bundle
+# Navigate to the project root
+cd ABAC
 
 # Validate the bundle
 databricks bundle validate --target dev
@@ -744,11 +745,11 @@ databricks bundle run governance_teardown --target dev
 
 ### Deploy with Reconciliation Engine (enterprise)
 
-1. Open `governance_reconciliation_engine` notebook
-2. Set `DEPLOYMENT_MODE = "dry_run"` for review
-3. Run all cells to generate full SQL script
-4. Review generated SQL
-5. Set `DEPLOYMENT_MODE = "apply"` and re-run
+1. Open `04_create_abac_policies` notebook in `src/notebooks/`
+2. Run cells 1–7 for dry-run (preview SQL)
+3. Review generated SQL in the dry-run output
+4. Run cell 8 to apply policies
+5. Run cell 9 to verify deployment
 
 ---
 
