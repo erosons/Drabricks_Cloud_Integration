@@ -431,11 +431,11 @@ Caveats for futures:
 
 Trend-resumption entry after a "fake" counter-move to the opposite band. Card 1.1, "Strategies Based On Swings" category.
 
-⚠️ **Card quality flags (important):**
-1. The rules text contains a printing error: "difference between (lower Bollinger Band and mean) is greater than difference between (lower Bollinger Band and mean)" — the same quantity twice. The comparison as printed is meaningless and, with standard Bollinger Bands, band-to-mean distances are symmetric by construction anyway.
-2. The chart side of this card shows SMA(14) + Williams %R(14) with "pullback from -50" annotations — a different indicator set than the Bollinger text. The graphic appears to belong to a Williams %R pullback strategy; text and chart don't match.
+✅ **RESOLVED against the source book (Chapter 1.1).** The card's garbled rule is now explained. The book's chart legend reads: A. Strong rejection from lower Bollinger Band; B. Entry above green candle; C. Stoploss (below the low of the candle that took support on the band — a **sudden gap down = stoploss hunting**, i.e. the "fake" move); D. Exit at upper Bollinger Band. So the strategy is a **stop-hunt reclaim at the lower band**: a spike/gap below the band that fails to hold and reclaims, bought on the next bullish candle. The card's duplicated clause was mangling the "gap-down stop-hunt" description. This skill is no longer provisional.
 
-The rules below record the card as written, then the most sensible mechanical interpretation. Treat this skill as PROVISIONAL until the intended logic is confirmed (e.g. against the ZebraLearn book/source).
+⚠️ **Original card quality flags (retained for reference):**
+1. The card's rules text duplicated a clause ("difference between (lower Bollinger Band and mean)... greater than... (lower Bollinger Band and mean)") — a printing error; the book text clarifies the intent.
+2. The card's chart showed SMA(14) + Williams %R with "pullback from -50" annotations — a mismatched graphic. (That graphic actually belongs to Book 1.2, Williams %R + MACD — now captured as Skill 33.)
 
 ### Concept (as intended, best reading)
 
@@ -1228,7 +1228,12 @@ Two RSIs of different lengths — a fast one for timing, a slow one for context.
 
 ⚠️ **INCOMPLETE — rules side not yet captured** (fifteenth consecutive chart-only card).
 
-⚠️ **The 50-level filter reads counter-intuitively and needs the text to resolve.** On the BUY panel the slow RSI is circled and labelled "below 50"; on the SELL panel it is circled and labelled "above 50." Taken at face value that is a mean-reversion filter (buy when longer-term momentum is washed out). But the same label pattern was inverted on Skill 18's card, so a printing error is also possible. Both readings are given below — do not build until this is settled, because the two are opposite strategies.
+✅ **RESOLVED against the source book (Chapter 2.6).** The book's "HOW TO APPLY DOUBLE RSI" states plainly: *"two RSI, one with its default settings, and one with an hourly timeframe on a 5-minute chart."* So:
+- **"RSI 60" = RSI(14) on the 1-HOUR timeframe, displayed on a 5-min chart** — a multi-timeframe (MTF) RSI, NOT a 60-period RSI. (This settles the "RSI 60 ambiguity" flagged below.)
+- The slow (higher-timeframe) RSI is the **trend-context filter** → this is **Reading B** below (trend-pullback), confirmed. It is NOT the counter-trend mean-reversion reading.
+- **MTF lookahead caveat (now the key implementation risk):** the 1-hour RSI only updates on hourly closes. A backtest must reference the last *closed* hourly RSI value, never the in-progress hour, or results are inflated. This is the standard multi-timeframe repainting trap.
+
+⚠️ **Original ambiguity note (retained; the 50-level card labels):** On the card the slow RSI was labelled "below 50" (buy) / "above 50" (sell), which reads backwards. Given the book confirms the conventional trend-filter reading (Reading B), the card's 50-level labels are a printing error consistent with Skills 18/27.
 
 ### What the chart shows
 
@@ -1327,7 +1332,9 @@ RSI extreme confirmed by a volume oscillator reading. Card 2.4. Chart settings: 
 
 ⚠️ **INCOMPLETE — rules side not yet captured** (seventeenth consecutive chart-only card).
 
-⚠️ **Label error on the SELL panel.** Both annotated zones on the sell side are labelled "Oversold zone," but the circles sit at the TOP of the RSI range and at a volume-oscillator spike — where "overbought" belongs. This is the fourth card in the deck with inverted or garbled labels (see Skills 9, 18, 25). Trust the circle positions over the text, but confirm from the rules side.
+✅ **RESOLVED against the source book (Chapter 2.4).** The book execution-page legend reads: *"A, B: Indicators in oversold zone; C: Exit as per RSI; D: Stoploss."* For the buy, **both RSI and the Volume Oscillator are read at the OVERSOLD extreme** — i.e. **Reading A** below (a low/contracting VO confirms selling exhaustion). The card's SELL-panel "Oversold" labels were an overbought/oversold printing error. So: mean-reversion entry at coincident RSI + VO extremes, VO-low = exhaustion confirmation. Trend-day regime gate still required.
+
+⚠️ **Original label-error note (retained):** The card's SELL panel mislabelled overbought circles as "Oversold zone" — the fourth card with inverted labels (Skills 9, 18, 25). Chart-circle positions were correct.
 
 ### What the chart shows
 
@@ -1673,4 +1680,134 @@ Caveats for futures:
 
 ---
 
-## Skill 33+: (reserved for future strategies)
+---
+
+# Skills 33–39: added from the source book (not in the card deck)
+
+These come from the full ZebraLearn "51 Trading Strategies" book (see `trading-strategies-VERIFICATION.md`
+for the complete 51-strategy index and reconciliation). Book numbering is given per entry. Rules are read
+from the book; parameters are backtest starting points.
+
+## Skill 33: Williams %R + MACD Duo for Swing Trading (Book 1.2)
+
+Trend-pullback swing entry timed by Williams %R. Chart: 30-min, SMA + Williams %R (MACD secondary).
+
+### BUY
+1. Wait for Williams %R to reach the overbought zone and then **pull back to the −50 level**.
+2. During that pullback, price must be trading **above the SMA** (trend filter).
+3. Enter above the high of the green (bullish) candle; stop at the swing low. R:R > 1:2.
+
+### SELL — mirror (Williams %R pulls back to −50 from the oversold side, price below SMA).
+
+**Futures fit:** good. Williams %R is a rescaled Stochastic, so mechanically trivial; the −50 pullback
+is a clean trend-pullback timing rule. **Archetype:** trend-pullback (with Skills 1, 3, 17, 19, 20, 22).
+Overlaps the oscillator-pullback family — build as a config of a shared oscillator-pullback module, not a
+standalone system. Note this card's chart is the graphic that was mis-printed onto the Skill 9 card.
+
+## Skill 34: Catching Swings with MACD and Fibonacci Retracement (Book 1.3)
+
+Trend-pullback to a Fibonacci level, confirmed by MACD.
+
+### BUY
+1. Uptrend established.
+2. Price retraces to a key Fib level of the prior swing leg (38.2 / 50 / 61.8%).
+3. MACD turns/crosses up at the zone → enter; stop below the retracement low; target prior high / extension.
+
+### SELL — mirror.
+
+**Futures fit:** good, and this supplies the **objective Fibonacci-zone proxy** recommended for Elliott
+(Skill 20). Fib levels are deterministic once the swing leg is chosen; the weak link is auto-selecting that
+leg — reuse the structure engine. **Archetype:** trend-pullback.
+
+## Skill 35: Riding a Breakout — Triangle + Volume (Book 1.4)
+
+Symmetrical-triangle breakout confirmed by volume. Chart: **daily**, with volume.
+
+### RULES (verbatim from book)
+1. Uptrend; a rally on huge volume begins a triangle.
+2. Consolidation forms **lower highs and higher lows** (triangle); draw trendlines on candle bodies.
+3. Volume **declines** through the consolidation.
+4. Wait for a **breakout candle on high volume** that is a **solid bullish candle**.
+5. **BUY above the breakout candle's close.**
+6. **STOP below the lower triangle trendline.**
+7. **TARGET ≥ 1:2** R:R.
+
+**Futures fit:** strong. This is the **symmetrical-triangle** member of the compression-breakout archetype
+(with Skill 2 rectangle, Skill 10 BB-width, Skill 29 VCP). Fold into the one compression module as a fourth
+detector (converging trendlines + volume contraction). The diagonal trendlines carry the same objectivity
+caveat as Skill 30 — prefer an ATR/regression construction of the triangle boundaries.
+
+## Skill 36: Ichimoku Cloud Indicator (Book 1.7)
+
+Ichimoku trend system. Chart: Ichimoku (9, 26, 52, 26), swing/daily timeframe. ✅ **Rules confirmed from the book.**
+
+### RULES (book — only two)
+1. **Trend/momentum:** buy when the **Conversion Line (Tenkan, blue) is above the Base Line (Kijun, red)**; sell when below.
+2. **Location:** only buy when **price has closed ABOVE the cloud**; only sell when **price has closed BELOW the cloud**.
+3. **Entry/stop refinement (book "optimization"):** enter on a **pullback** and place the stop at the pullback level, to reduce the chance of being stopped out.
+
+Note this is a **simplified** Ichimoku ruleset — it uses only Tenkan/Kijun and price-vs-cloud. It does NOT
+require the Chikou-span or future-cloud-colour conditions of full traditional Ichimoku, which removes most
+of the displacement/lookahead risk.
+
+**Futures fit:** workable, and cleaner to automate than full Ichimoku because of the reduced ruleset. Both
+conditions are bar-close evaluable. Still best treated as a **regime/trend filter or entry gate** rather
+than a high-frequency trigger. ⚠️ Minor displacement caveat remains: the cloud (Senkou A/B) is plotted 26
+bars **forward**, but it is computed from current+past data so reading "is price above the cloud value
+plotted at the current bar" is safe; just don't reference cloud values plotted into the future relative to
+the trade bar. **Archetype:** regime classifier / trend filter (with 3, 11, 23). Overlaps the EMA-alignment
+gate (Skill 3) — test whether Ichimoku's Tenkan/Kijun + cloud actually beats the simpler EMA9/EMA21 + VWAP
+gate before adopting the heavier indicator.
+
+## Skill 37: Moving Average and Fibonacci — Intraday (Book 2.1)
+
+Intraday MA trend + Fib retracement entry. The intraday cousin of Skill 34.
+
+**Futures fit:** good; same Fib machinery, intraday timeframe. **Likely redundant with Skill 34** — build one
+Fib-pullback module and parameterise the timeframe rather than maintaining both. **Archetype:** trend-pullback.
+
+## Skill 38: Ride the Trend with Supertrend — Intraday (Book 2.2)
+
+Supertrend as an intraday trend-follower. Distinct card from Book 4.2 (Supertrend + RSI = Skill 12).
+
+**Futures fit:** good but a **near-duplicate of Skill 12** — same indicator, same trailing-exit engine, minus
+the RSI confirmation. Do not build separately; treat as a timeframe/parameter variant of Skill 12 and A/B it
+inside the trend-follow module. **Archetype:** trend-follow with trailing exit.
+
+## Skill 39: Understanding Repo Rates and Their Effect on the Stock Market (Book 7.5)
+
+Macro event-driven directional strategy. ✅ **Rules confirmed from the book.** (The card's "Trading Based on
+the Stock Rate" was a condensation of this repo-rate chapter.)
+
+### RULES (book)
+- Core idea: **RBI cuts the repo rate → buy the index; RBI hikes → short the index** (traded via derivatives).
+1. Follow the RBI monetary-policy review (repo-rate decision), which happens ~every 2 months.
+2. **BUY** the Nifty 50 at the announcement-day close if the repo rate was **lowered** vs. the previous policy.
+3. **SELL/short** at the announcement-day close if the repo rate was **hiked**.
+4. **Hold for ~1 month**, then book the result at month-end. The book explicitly says **not** to use a fixed
+   stop/target — the edge is statistical over many occurrences, not per-trade.
+
+### Futures / automation assessment
+**Verdict: categorically different from every other strategy in the deck — this is a macro event trade, not a
+chart pattern. It is automatable but belongs to a different subsystem.**
+1. **Not a price-action or indicator strategy.** The signal is an external scheduled event (central-bank rate
+   decision) and its delta vs. the prior decision. There is no chart trigger, no stop, no target in the usual
+   sense. None of the five shared services (structure, levels, regime, trailing-exit, risk) apply directly.
+2. **The tradable primitive is an economic-calendar feed**, not a candle. You already need an economic-calendar
+   blackout for the scalping strategies (Skills 7, 8, 9, etc.); the same feed can *source* this trade. That is
+   the only real infrastructure overlap.
+3. **Direct transfer to US futures is imperfect.** The rule is written for the RBI/Nifty. The ES/NQ analogue is
+   the **FOMC rate decision** — but US index futures reaction to Fed cuts/hikes is far more anticipated and
+   priced-in than the book's simple "cut → up" premise assumes; the immediate post-FOMC move is frequently
+   driven by the guidance/dot-plot surprise, not the rate change itself. **Do not assume the naive rule holds on
+   ES/NQ** — backtest the cut/hike → 1-month-forward-return relationship on your instrument before trusting it.
+4. **Holding a month of index-futures exposure** means front-month roll management and overnight/gap risk — a
+   very different risk profile from the intraday and swing strategies. If pursued, size it as a separate
+   macro-overlay book, not part of the mechanical intraday bot.
+5. **Priority: separate track.** Interesting and genuinely uncorrelated with the technical strategies (which is
+   valuable for portfolio construction), but it is a macro overlay, not part of the price-action automation.
+   Park it alongside the options track rather than in the main bot.
+
+---
+
+## Skill 40+: (reserved for future strategies)
