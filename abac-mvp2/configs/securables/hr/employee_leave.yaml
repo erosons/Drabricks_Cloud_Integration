@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.hr.employee_leave
+# Template: sensitive_hr_table
+# Review and customize column_overrides as needed.
+
+table_id: employee_leave
+catalog: general_use
+schema: hr
+template: sensitive_hr_table
+description: 'Auto-discovered table: general_use.hr.employee_leave'
+policy_bindings: []
+grants: []
+column_overrides: []

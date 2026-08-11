@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.finance.tax_withholdings
+# Template: financial_table
+# Review and customize column_overrides as needed.
+
+table_id: tax_withholdings
+catalog: general_use
+schema: finance
+template: financial_table
+description: 'Auto-discovered table: general_use.finance.tax_withholdings'
+policy_bindings: []
+grants: []
+column_overrides: []

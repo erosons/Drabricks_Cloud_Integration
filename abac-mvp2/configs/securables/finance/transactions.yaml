@@ -1,0 +1,23 @@
+# Table: transactions
+# Domain: finance | Template: financial_table
+# High-sensitivity financial data with credit card masking.
+
+table_id: transactions
+catalog: general_use
+schema: finance
+template: financial_table
+description: "Customer payment transactions with card data"
+
+policy_bindings: []
+
+grants:
+  - group: finance_data_readers
+    privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+  - group: finance_cleartext_approved
+    privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+column_overrides:
+  - name: transaction_amount
+    tags: {sensitive.financial_amount: ""}
+  - name: merchant_category
+    tags: {}  # not sensitive

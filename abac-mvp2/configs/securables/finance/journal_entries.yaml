@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.finance.journal_entries
+# Template: financial_table
+# Review and customize column_overrides as needed.
+
+table_id: journal_entries
+catalog: general_use
+schema: finance
+template: financial_table
+description: 'Auto-discovered table: general_use.finance.journal_entries'
+policy_bindings: []
+grants: []
+column_overrides: []

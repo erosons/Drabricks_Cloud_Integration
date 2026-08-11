@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.finance.risk_assessments
+# Template: financial_table
+# Review and customize column_overrides as needed.
+
+table_id: risk_assessments
+catalog: general_use
+schema: finance
+template: financial_table
+description: 'Auto-discovered table: general_use.finance.risk_assessments'
+policy_bindings: []
+grants: []
+column_overrides: []

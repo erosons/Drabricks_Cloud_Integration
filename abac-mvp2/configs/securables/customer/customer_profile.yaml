@@ -1,0 +1,29 @@
+# Table: customer_profile
+# Domain: customer | Template: standard_pii_table
+# This table has additional table-level policies beyond what the template provides.
+
+table_id: customer_profile
+catalog: general_use
+schema: customer
+template: standard_pii_table
+description: "Core customer profile with PII fields"
+
+# Additional policies beyond template/schema/catalog inheritance
+policy_bindings:
+  - active_records_only
+  - ssn_full_redaction
+
+# Override/extend grants beyond template defaults
+grants:
+  - group: customer_data_editors
+    privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT, MODIFY]
+  - group: customer_cleartext_approved
+    privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+# Column overrides — only needed for columns that don't match template patterns
+# or need custom tags beyond what the pattern assigns
+column_overrides:
+  - name: region_code
+    tags: {region_identifier: ""}
+  - name: is_active
+    tags: {soft_delete_flag: ""}
