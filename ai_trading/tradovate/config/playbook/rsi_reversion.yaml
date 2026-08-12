@@ -1,0 +1,64 @@
+module: rsi_reversion
+skills: [25, 27, 28, 32]         # SIX RSI mean-reversion variants = ONE build
+archetype: mean-reversion-to-mean (pluggable confirmation)
+tier: swing
+priority: 3
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    RSI extremes mark washed-out moves; a confirmation filter distinguishes
+    tradable exhaustion from trend persistence. The playbook's four remaining
+    RSI variants differ ONLY by that filter — slow/MTF RSI (25), volume
+    oscillator (27), divergence (28), M/W pattern (32) — so this is one module
+    with a pluggable confirmation_filter, and one experiment comparing the
+    filters on identical data. Building four strategies here would be the
+    single largest wasted effort available in the playbook.
+  markets: [MES, MNQ]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: filter-dependent — part of the comparison
+
+mechanics:
+  base_signal: RSI(14) at a band extreme, entering on the turn back out
+  confirmation_filter: none | slow_rsi | volume_osc | divergence | mw_pattern
+  stop: structural swing beyond the entry (always kept — the RSI-band exit has
+        no price protection on its own)
+  targets: opposite RSI band, plus time_stop_bars (20)
+  exit: opposite band / time stop / stop
+  regime_gate: range_only — every fade in this deck requires it
+  shared_services: [regime_classifier]
+
+filter_notes:
+  slow_rsi: >
+    RESOLVED from the source book (skill 25): "RSI 60" is RSI(14) on the
+    1-HOUR timeframe displayed on a 5m chart — an MTF trend filter (Reading
+    B), not a 60-period RSI and not the mean-reversion reading. Implementation
+    risk: reference only the last CLOSED hourly value; reading the in-progress
+    hour is the standard MTF lookahead trap.
+  volume_osc: >
+    RESOLVED from the source book (skill 27): both RSI and VO are read at the
+    oversold extreme — a LOW/contracting VO confirms exhaustion (Reading A).
+    The card's inverted labels were a printing error.
+  divergence: >
+    Confirmed-pivot divergence only (skill 28): pivots on both series confirm
+    late; earliest legal entry is the confirmation bar. No repainting
+    divergence scripts.
+  mw_pattern: >
+    Skill 32: trigger on the NECKLINE BREAK (real-time), not the second
+    trough (lookahead); location filter W below 40 / M above 60 so mid-range
+    wiggles don't qualify.
+
+prerequisites:
+  - "The filter comparison IS the G2 experiment: base signal + each filter on
+    identical data, judged against the no-filter baseline."
+
+risks_and_guards:
+  - Trend persistence is the shared failure mode; the range_only gate is
+    mandatory for every variant.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Skill 25 reading and skill 27 VO direction resolved against the source
+     book (see filter_notes) — config.yaml comments predate these resolutions."

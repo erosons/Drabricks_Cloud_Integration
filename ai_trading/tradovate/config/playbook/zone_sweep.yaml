@@ -1,0 +1,48 @@
+module: zone_sweep
+skills: [15, 21]                 # supply/demand zones + SMC sweeps = ONE module
+archetype: zone-sweep-reaction
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Stop runs at obvious levels are a real, observable feature of index
+    futures: price pokes beyond a prior extreme or a base-impulse zone by a
+    few ticks, fails, and reclaims. Build the measurable behavior (base,
+    impulse, volume, poke-and-reclaim) — not the institutional narrative.
+    Skills 15 and 21 describe the same events in different vocabulary and are
+    deliberately one build.
+  markets: [MES, MNQ]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: low-moderate
+
+mechanics:
+  zone: base of tight bars followed by an impulse >= impulse_min_atr (2.0)
+        with volume >= zone_volume_ratio (1.5) (zone_source volume_zones;
+        prefer volume-profile nodes when built)
+  sweep: price trades beyond the zone/prior extreme by <=
+         sweep_max_penetration_ticks (8), then closes back inside within
+         sweep_reclaim_bars (3)
+  entry: close back through the level (reclaim confirmation)
+  stop: beyond the sweep extreme + stop_buffer_ticks (3) — futures sweep the
+        obvious wick by a few ticks
+  targets: opposing structural level; skip if R:R < min_rr (1.5)
+  exit: brackets
+  regime_gate: zone freshness — zones expire after zone_max_touches (2)
+  shared_services: [structure_engine, levels_service]
+
+prerequisites: []
+
+risks_and_guards:
+  - "Zone proliferation is the failure mode: freshness expiry, a strength
+    score, and a cap on active zones are the actual work of the build."
+  - Sweep threshold is where the edge lives or dies — proper parameter testing
+    in G2/G3, not a default taken on faith.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "SMC vocabulary (order block, liquidity grab) mapped to numeric
+     definitions; fixed in advance, accepted whatever the backtest says."

@@ -1,0 +1,47 @@
+module: bb_fake_move
+skills: [9]
+archetype: fade-at-statistical-extreme (stop-hunt reclaim)
+tier: swing
+priority: 3
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    RESOLVED from the source book: in an uptrend, a sudden spike/gap down to
+    the lower Bollinger Band that fails to hold — a stop-hunt — is bought on
+    the reclaim (first bullish candle), targeting the upper band. The card's
+    garbled rule was a printing error; the book's legend settles it as a
+    stop-hunt reclaim at the band.
+  markets: [MES]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: low
+
+mechanics:
+  setup: uptrend context (mid-band rising — trend_intact mid_band_rising);
+         sharp fall to/near the lower band with NO close beyond it
+         (interpretation no_close_beyond_band — the band held)
+  entry: first close > open candle after the band touch; stop entry at its high
+  stop: swing low of the fall
+  targets: upper Bollinger Band
+  exit: bracket to the far band
+  regime_gate: trend context intact; news blackout mandatory — sudden falls in
+               uptrends are frequently news-driven, the exact case where
+               mean-reversion buying gets run over
+  shared_services: [regime_classifier]
+
+prerequisites:
+  - "fold_into vwap_rsi_pullback if backtest shows no distinct edge: the
+     mechanics converge on 'buy the washed-out dip at a statistical level in
+     an uptrend', and a ninth strategy must earn its slot."
+
+risks_and_guards:
+  - Wide stop (swing low of a sharp fall) vs far-band target — verify R:R
+    clears 1:1.5 after slippage; sharp-fall bars fill poorly.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Card's garbled defining condition resolved against the source book as
+     the stop-hunt/gap-down reclaim; no longer provisional on rules (only on
+     backtest validation)."

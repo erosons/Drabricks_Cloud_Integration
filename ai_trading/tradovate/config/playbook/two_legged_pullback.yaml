@@ -1,0 +1,46 @@
+module: two_legged_pullback
+skills: [1]
+archetype: trend-pullback-continuation
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    In an established trend (HH/HL structure), a pullback forming exactly two
+    corrective legs that completes without breaking structure marks the spot
+    where the trend resumes. Stop-entry at the signal candle extreme means the
+    market must actually turn before we're in.
+  markets: [MES, MNQ]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: few per week per instrument
+
+mechanics:
+  trend: structure_engine HH/HL state (pivot-confirmed; fills never earlier
+         than the confirmation bar)
+  setup: two distinct corrective legs — two pivot lows within the pullback
+         where the second undercuts the first while price holds the prior
+         major higher-low (mechanical leg definition; mirror for shorts)
+  entry: buy stop at the signal candle high (entry signal_candle_high_stop)
+  stop: signal candle low
+  targets: t1 at 2R for half (min_contracts_for_partials 2; with 1 contract,
+           T2-only), t2 at 4R; breakeven_after_t1
+  exit: bracket ladder
+  regime_gate: trend state from the structure engine
+  shared_services: [structure_engine]
+
+prerequisites: []
+
+risks_and_guards:
+  - Wide signal candles on NQ can carry stops past the risk budget —
+    max_signal_risk_usd (50) skips them.
+  - Leg detection was the flagged-subjective part of the card; the pivot-based
+    definition above is the locked mechanical interpretation and must be
+    validated in walk-forward before live.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "'Two small pullbacks' codified as two consecutive pivot lows with the
+     second undercutting the first while major structure holds."

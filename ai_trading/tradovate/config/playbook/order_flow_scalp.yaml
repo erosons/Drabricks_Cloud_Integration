@@ -1,0 +1,44 @@
+module: order_flow_scalp
+skills: [legacy-kraken]
+archetype: order-flow-scalp
+tier: scalp
+priority: 1
+status_requested: limited_test   # retroactive factory run — see README §22 roadmap note
+
+goal:
+  edge_hypothesis: >
+    Short-horizon order-flow imbalance (DOM depth imbalance + trade delta)
+    predicts the next few ticks; EMA trend and V-exhaustion/re-test structure
+    filter out entries against the prevailing intraday move. Ported from the
+    kraken spot bot where the same two-layer engine ran live.
+  markets: [MES, MNQ]
+  timeframe: tick / DOM events
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: multiple trades per session
+
+mechanics:
+  entry: >
+    Layer 1 score = 0.6 * book imbalance + 0.4 * trade delta must clear
+    min_confidence; Layer 2 (EMA trend / V-exhaustion / re-test truth table)
+    must agree. Limit order at best bid (buy) / best ask (sell), tick-quantized,
+    active contract month only.
+  stop: risk block per product — tick-native progressive trailing SL (README §13)
+  targets: partial_exit_ladder from the product risk block
+  exit: trailing engine milestones; hard flatten 15:55 ET
+  regime_gate: none of its own — gates F1–F4 + execution guards apply
+  shared_services: [execution_guards]
+
+prerequisites:
+  - This module predates the lifecycle and is live-by-default in config. It must
+    be run backwards through G2–G4 (limited test on futures data, walk-forward,
+    Monte Carlo) before it keeps its live status — the suggested first factory run.
+
+risks_and_guards:
+  - Order-flow edge measured on crypto spot may not transfer to CME futures
+    microstructure; treat the port as unvalidated until G2–G4 pass.
+  - Latency-sensitive: signal computation must stay in-process on the WS feed.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Percent-based thresholds converted to tick-based where marked in config."

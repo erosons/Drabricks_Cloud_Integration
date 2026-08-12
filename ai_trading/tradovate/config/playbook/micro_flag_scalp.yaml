@@ -1,0 +1,44 @@
+module: micro_flag_scalp
+skills: [7]
+archetype: compression-breakout (1-minute micro)
+tier: scalp
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    In a moving 1m market, a tight cluster of small candles is a pause, not a
+    reversal; the break of the cluster in the prevailing direction continues
+    the move. Skill 2's logic compressed to the scalp timeframe, where the
+    trend filter — not the cluster — is the actual edge.
+  markets: [MNQ]
+  timeframe: 1m (timeframe_minutes)
+  session: first session_window_hours_after_open (3) of RTH only
+  target_ret_dd: 2.0
+  expected_frequency: several per session inside the window
+
+mechanics:
+  trend: ema9/21 alignment or VWAP side (trend_filter ema9_21_or_vwap_side) —
+         strict enough that the bot sits out ranging days entirely
+  setup: cluster_bars (3-6, deliberately not hardcoded 4) each with range <=
+         candle_max_atr (0.6 x ATR)
+  entry: stop order 1 tick beyond the cluster extreme; cancel if a bar closes
+         out of the cluster the wrong way first
+  stop: opposite side of the cluster
+  targets: 1:1 to 1:2, or hand to the trailing engine at 1R
+  exit: brackets / trail
+  regime_gate: trend filter above + news blackout (gate F2)
+  shared_services: [regime_classifier, execution_guards]
+
+prerequisites: []
+
+risks_and_guards:
+  - "execution: python_ws_only — latency-critical; the webhook path would eat
+     the edge. Signal detection runs in-process on live WS data."
+  - False-break rate is high on 1m; the session window and blackout guards are
+    mandatory, and min-R filter skips clusters tighter than costs.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "'4 small candles' relaxed to 3-6 per the playbook — the concept is a
+     brief tight pause; a hardcoded 4 is curve-fit."

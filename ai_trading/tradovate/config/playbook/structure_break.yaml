@@ -1,0 +1,43 @@
+module: structure_break
+skills: [22]
+archetype: level-break-immediate (Dow structure)
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Dow-theory structure: an uptrend of confirmed HH/HL breaks the prior swing
+    high — enter on the break with the stop at the last higher low. The same
+    structure engine underlies two_legged_pullback; this module enters ON the
+    break where that one enters on the pullback, and the comparison between
+    the two timings is itself a key experiment.
+  markets: [MES, MNQ]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: few per week
+
+mechanics:
+  trend: last two confirmed pivot highs rising AND last two pivot lows rising
+         (mirror short) — structure_engine state
+  entry: close beyond the prior confirmed swing with buffer_atr (0.25) —
+         obvious swing points get swept; the buffer is mandatory
+  stop: last confirmed higher low (stop last_higher_low)
+  targets: t1 2R, t2 4R ladder
+  exit: brackets
+  regime_gate: structure state
+  shared_services: [structure_engine]
+
+prerequisites: []
+
+risks_and_guards:
+  - Pivot confirmation lag applies to the LEVEL (known late), not the break
+    trigger (real-time) — the backtest must respect that split.
+  - "compare_against two_legged_pullback: same engine, different timing;
+    measure both off identical structure data before choosing per instrument."
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Target (unmarked on card) resolved to the playbook's standard 2R/4R
+     ladder for cross-strategy consistency."

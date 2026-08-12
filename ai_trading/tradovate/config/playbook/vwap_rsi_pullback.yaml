@@ -1,0 +1,45 @@
+module: vwap_rsi_pullback
+skills: [8]
+archetype: mean-reversion-to-mean (trend-side pullback)
+tier: scalp
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Session VWAP is the institutional execution benchmark on index futures; a
+    pullback that holds VWAP in the trend direction, timed by an RSI washout,
+    is a high-quality location+momentum entry. Longs only on the VWAP-bullish
+    side (mirror shorts) — never fading VWAP breaks on trend days.
+  markets: [MES, MNQ]
+  timeframe: 1m
+  session: rth               # VWAP anchored to RTH open, matured 30 min
+  target_ret_dd: 2.0
+  expected_frequency: low outside volatile sessions (RSI14 < 30 on 1m is rare)
+
+mechanics:
+  arm: RSI(14) < rsi_arm_below (30) arms the setup for rsi_arm_ttl_bars (10)
+  trigger: >
+    while armed, a candle penetrates the VWAP zone and closes back above it
+    (close-back-through confirmation). State machine — extreme and touch
+    rarely land on the same bar.
+  entry: confirming candle close, or stop above its high
+  stop: below the VWAP-hold candle / just under VWAP
+  targets: fallback_target vwap_band_1 — the RSI-exit alone is unprotected
+  exit: RSI > rsi_exit_above (70), band target, or time stop
+  regime_gate: direction_filter vwap_side (longs above VWAP only; mirror)
+  shared_services: [levels_service.vwap_bands, regime_classifier]
+
+prerequisites: []
+
+risks_and_guards:
+  - VWAP statistically unstable in the first 15–30 min (vwap_warmup_minutes).
+  - Compare RSI-exit vs band-target exit in G2; band target expected to be the
+    more consistent on 1m index futures.
+  - Mutually exclusive with vwap_band_fade on the same instrument (opposite
+    uses of the same indicator) — regime router picks one.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "RSI(7) variant allowed only as an explicitly tested variant, never a
+     silent parameter change."

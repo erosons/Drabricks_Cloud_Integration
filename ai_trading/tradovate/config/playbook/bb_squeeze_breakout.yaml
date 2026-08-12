@@ -1,0 +1,44 @@
+module: bb_squeeze_breakout
+skills: [10]
+archetype: compression-breakout
+tier: swing
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Bollinger Band Width in the bottom percentile of its recent distribution
+    marks a volatility squeeze; when BBW breaks out of its flat base AND a bar
+    closes outside a band, volatility is expanding in that direction — ride the
+    expansion with the 20 SMA as trailing stop.
+  markets: [MES, MNQ, ES, NQ]
+  timeframe: 30m
+  session: rth               # overnight bars compress BBW artificially
+  target_ret_dd: 2.0
+  expected_frequency: low — squeezes are by construction rare
+
+mechanics:
+  setup: BBW below bbw_squeeze_percentile (20) of last bbw_lookback_bars (150)
+  entry: >
+    BOTH legs required (require_bbw_break: true — do not weaken): BBW breaks
+    its flat base AND the same/adjacent closed bar closes beyond the band.
+  stop: BB middle line (20 SMA)
+  targets: none fixed — trend ride
+  exit: "close beyond the 20 SMA against the position (trail_provider sma20)"
+  regime_gate: none — the squeeze condition is its own regime filter
+  shared_services: [trailing_exit_engine.sma]
+
+prerequisites: []
+
+risks_and_guards:
+  - Initial risk is >= 2 sigma by construction; skip signals whose stop exceeds
+    the product's max_trade_risk_usd (execution guard already does this).
+  - Squeezes often resolve on scheduled news; the 30m tier may trade those
+    expansions but slippage on the entry bar must be modeled realistically.
+  - Head-fake pokes outside the band are the known failure; the BBW-break leg
+    is the mitigation and is mandatory.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "'Close to 0 and flat' quantified as a percentile condition, not an
+     absolute BBW level (instrument-transferable)."

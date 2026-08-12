@@ -368,7 +368,7 @@ factory's discard pile is data too).
 
 | Gate | Question it answers | Pass criteria (defaults, per `research:` config) |
 |------|--------------------|--------------------------------------------------|
-| **G1 → limited_test** | Is the idea worth computer time? | Written goal/objective for the strategy; entry & exit fully mechanical (no discretionary or repainting inputs — the playbook's priority-3 ambiguities must be resolved here) |
+| **G1 → limited_test** | Is the idea worth computer time? | A complete **playbook card** (`config/playbook/<module>.yaml`): written goal/objective, fully mechanical entry & exit (no discretionary or repainting inputs), and an empty `ambiguities_open` list — the playbook's priority-3 ambiguities must be resolved on the card before any computer time is spent |
 | **G2 → walk_forward** | Does a quick, cheap test show an edge? | Limited backtest (recent 1–2 y, 1 contract, pessimistic fills, costs included) shows positive expectancy; no red-flag artifacts (§9) |
 | **G3 → monte_carlo** | Does the edge survive out-of-sample? | Walk-forward efficiency ≥ 50% (out-of-sample profit rate vs in-sample); combined out-of-sample equity meets the strategy's stated goal; in/out periods chosen on holdout data, not optimized (§10) |
 | **G4 → incubation** | What are the realistic risk odds? | Monte Carlo (2,500 iterations) annual **return / max drawdown ≥ 2.0**; risk of ruin ≤ 10%; median max drawdown within the product's tolerance (§11) |
@@ -377,6 +377,14 @@ factory's discard pile is data too).
 
 Rules enforced by the **gate keeper** (`research/gatekeeper.py`):
 
+- **G1 requires the playbook card.** Each module has one YAML card in
+  `config/playbook/` (schema in that directory's README) holding the goal,
+  the mechanical rule statements, and its ambiguity ledger. The gatekeeper
+  blocks `idea → limited_test` while the card is missing or `ambiguities_open`
+  is non-empty, and records the card's git commit hash as the G1 evidence on
+  the lifecycle row. Cards carry a `status_requested` field only — actual
+  state lives exclusively in the DB, so no card or config edit can promote a
+  strategy.
 - The execution plane refuses to route live orders for any module whose
   `lifecycle_state != live` — regardless of `enabled:` in config. `incubation`
   modules run in per-strategy paper mode even inside a live process.
@@ -767,7 +775,10 @@ tradovate/
 ├── config/
 │   ├── config.yaml            # mode switches, session, news guard, resolver,
 │   │                          # strategy & research defaults      [EXISTS]
-│   └── products.yaml          # full mini/micro catalog + trade flags [EXISTS]
+│   ├── products.yaml          # full mini/micro catalog + trade flags [EXISTS]
+│   └── playbook/              # one G1 card per strategy module (§8) [EXISTS]
+│       ├── README.md          # card schema + lifecycle wiring
+│       └── <module>.yaml      # 23 cards mirroring strategies in config.yaml
 │
 ├── docs/
 │   ├── README.md              # this document                    [EXISTS]
@@ -893,6 +904,7 @@ See [`config/config.yaml`](../config/config.yaml) (inline-documented). Summary:
 | `contract_resolver` | daily 18:30 ET, `max_volume_and_oi` rule, 48 h staleness guard |
 | `shared_services` | structure engine, levels service, regime classifier, trailing-exit engine, execution guards |
 | `strategies` | 23 playbook modules with skill number, tier, priority, and `enabled` flags — `enabled` now means "eligible for the factory"; `strategy_lifecycle` (DB) decides what trades |
+| `playbook/` | one card per module — the G1 artifact (§8): goal, mechanical rules, ambiguity ledger; params stay in `strategies.<module>.params` (one source of truth each) |
 | `research` | gate thresholds — see below |
 | `risk_operations` | operational switches (`flatten_on_disconnect`, one strategy per product, portfolio circuit breaker) |
 
@@ -986,6 +998,8 @@ Account / infrastructure:
 
 Per strategy being promoted:
 
+- [ ] Playbook card complete (`config/playbook/<module>.yaml`): `ambiguities_open`
+      empty, card commit hash recorded as G1 evidence on the lifecycle row
 - [ ] `strategy_lifecycle` state is `incubation` with ≥ `incubation_min_days` elapsed
 - [ ] Walk-forward out-of-sample equity met the strategy's written goal; in/out
       periods confirmed on the untouched holdout

@@ -1,0 +1,45 @@
+module: sar_rsi_scalp
+skills: [31]
+archetype: trend-follow-with-trailing-exit (SAR variant)
+tier: scalp
+priority: 3
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Parabolic SAR flip for direction with RSI-50 confirmation on the 3m chart.
+    Honestly framed: this is supertrend_rsi with SAR swapped in, and SAR is
+    the weaker trailing mechanism on futures (no volatility normalization,
+    whipsaw-prone, accelerating stop ejects extended trends early). It exists
+    as an A/B variant inside the trailing-engine comparison, not a standalone
+    build.
+  markets: [MNQ]
+  timeframe: 3m (timeframe_minutes)
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: several per session — costs dominate at this frequency
+
+mechanics:
+  entry: SAR flips (dots cross to the other side of price) with RSI(14)
+         crossing 50 in the same direction
+  stop: the current SAR dot, floored at min_stop_atr (0.75) — raw SAR stops
+        can be tighter than noise and spread
+  targets: none fixed
+  exit: SAR flip against the position (trailing_exit_engine.sar)
+  regime_gate: whipsaw guard essential — session window, EMA/ADX separation,
+               or the CPR day-type gate to sit out rotational sessions
+  shared_services: [trailing_exit_engine.sar, regime_classifier]
+
+prerequisites:
+  - Test only as the fourth provider in the trailing-engine A/B (supertrend /
+    sma20 / donchian_mid / fractal / sar) once supertrend_rsi is running.
+
+risks_and_guards:
+  - "heiken_ashi: display_only — HA candles are synthetic averages, not
+     tradeable prices; NEVER fill at HA values (same fill-realism error class
+     as Renko). All fills and P&L at real OHLC."
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Whether HA is load-bearing or decorative (card ambiguity): resolved as
+     display-only for automation; signal source is real candles."

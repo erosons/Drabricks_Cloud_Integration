@@ -1,0 +1,46 @@
+module: pivot_levels
+skills: [13, 26]
+archetype: level-break / level-break-retest
+tier: swing
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Traditional floor pivots (P/R1/R2/S1/S2) are computed pre-open from prior
+    session OHLC and are widely watched on index futures, so real resting orders
+    cluster there; breaks and retests of those levels carry follow-through.
+    Skill 13 enters on the break, skill 26 waits for the retest — two entry
+    modes on one level engine, compared per instrument in backtest.
+  markets: [MES, MNQ, ES, NQ]
+  timeframe: intraday bars on daily pivot levels
+  session: rth               # levels_service.session_anchor — one choice everywhere
+  target_ret_dd: 2.0
+  expected_frequency: 0-2 setups per session
+
+mechanics:
+  bias: close beyond P by >= bias_buffer_atr (0.25 x ATR) before bias flips —
+        prevents chop-flipping at the pivot
+  entry: >
+    entry_mode=breakout: close beyond level with buffer.
+    entry_mode=retest: after a confirmed break, price returns within tolerance
+    of the level within retest_window_bars and closes back on the favorable
+    side; setup expires otherwise; a close back through the level cancels it.
+  stop: beyond the level / retest extreme (static)
+  targets: structural ladder [R1, R2] (mirror S1, S2) — plain brackets
+  exit: bracket targets; session flatten
+  regime_gate: none intrinsic; day-type routing may come from cpr_day_router
+  shared_services: [levels_service.pivots_traditional, structure_engine]
+
+prerequisites:
+  - RTH vs ETH anchoring decided once (rth) and identical in backtest and live.
+
+risks_and_guards:
+  - Breakout mode inherits sweep risk at obvious levels — close-based entries
+    with buffer are mandatory, never wick-based.
+  - Retest mode carries missed-move cost on trend days; track miss rate in G2.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Card text side missing (skill 13): breakout-vs-retest fork resolved by
+     building both modes and letting walk-forward pick per instrument."

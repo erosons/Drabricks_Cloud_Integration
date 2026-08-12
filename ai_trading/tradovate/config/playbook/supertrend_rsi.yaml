@@ -1,0 +1,44 @@
+module: supertrend_rsi
+skills: [12]
+archetype: trend-follow-with-trailing-exit
+tier: swing
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Supertrend(10,3) flip defines trend direction with an ATR-scaled stop that
+    self-adjusts across instruments; RSI confirmation suppresses whipsaw flips
+    in chop. Low win rate, large winners — a let-it-run trend system judged on
+    expectancy, not hit rate.
+  markets: [MES, MNQ, MGC, MCL]
+  timeframe: swing bars (30m default; test per instrument)
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: few signals per week per instrument
+
+mechanics:
+  entry: Supertrend flips bullish (direction change on bar close) AND RSI(14)
+         above rsi_confirm_long (60); mirror short below rsi_confirm_short (40)
+  stop: the Supertrend line itself
+  targets: none — trend ride
+  exit: supertrend_flip against the position (stop and trail are one object,
+        modified server-side each bar per the OSO bracket design)
+  regime_gate: verify in G2 that RSI actually suppresses whipsaws; if not, add
+               the EMA-separation/ADX gate from regime_classifier
+  shared_services: [trailing_exit_engine.supertrend, regime_classifier]
+
+prerequisites: []
+
+risks_and_guards:
+  - At the flip, entry-to-line distance is ~3xATR; skip signals whose stop
+    exceeds max_trade_risk_usd.
+  - (10,3) is a default, not a law — test (7,3)/(10,2) per instrument, chosen
+    out-of-sample.
+  - Near-substitute of donchian_pullback — run one per instrument, not both.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Card text side missing: RSI thresholds set to 60/40 (chart annotation
+     reading); to be re-confirmed if the card text is ever captured, but the
+     values are locked for reproducibility now."

@@ -1,0 +1,43 @@
+module: volume_breakout
+skills: [2]
+archetype: compression-breakout
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    A tight consolidation after a sustained move, with volume drying up, means
+    the opposing side is exhausted rather than reversing; a large-bodied
+    breakout bar on expanded volume confirms continuation. Futures volume is
+    real exchange volume, so the sensor has actual information content.
+  markets: [MES, MNQ, MCL]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: low
+
+mechanics:
+  setup: consolidation_bars (8-20) with range <= consolidation_max_range_atr
+         (1.0 x ATR); consolidation volume < low_volume_ratio (0.7) of the
+         same-time-of-day RVOL baseline (volume_baseline rvol_time_of_day —
+         NOT a flat SMA; intraday volume is U-shaped)
+  entry: close beyond the range with body >= breakout_body_atr (1.5) and
+         volume >= breakout_volume_ratio (1.5)
+  stop: opposite side of the range (or breakout-bar extreme for tighter risk)
+  targets: measured move (range height), or the 1:2/1:4 ladder
+  exit: brackets
+  regime_gate: prior sustained move required (trend context)
+  shared_services: [execution_guards]
+
+prerequisites: []
+
+risks_and_guards:
+  - "roll_week_guard: volume migrates to the new front month around contract
+    roll; the volume filter is blind there without the guard."
+  - Breakout bars fill worse on stop/market entries; slippage model applies.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "'Low volume' resolved to same-time-of-day relative volume to defeat the
+     intraday U-shape (every lunchtime range would otherwise qualify)."

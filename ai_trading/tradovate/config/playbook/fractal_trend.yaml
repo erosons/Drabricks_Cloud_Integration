@@ -1,0 +1,46 @@
+module: fractal_trend
+skills: [19]
+archetype: trend-follow-with-trailing-exit (structural stops)
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Bill Williams fractal breaks filtered by the 50 SMA: trade confirmed
+    up-fractal breaks only above the SMA (mirror below). The distinct
+    contribution is the fractal trailing stop — structural swing points where
+    real stops cluster, rather than a formulaic line.
+  markets: [MES, MNQ]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: few per week
+
+mechanics:
+  trend: close beyond SMA(50) with sma_buffer_atr (0.25) buffer — no whipsaw
+         flipping at the crossover
+  entry: stop order at the CONFIRMED up-fractal high (entry
+         confirmed_up_fractal_break)
+  stop: last confirmed down-fractal low
+  targets: none fixed
+  exit: fractal trail — stop steps to each newly confirmed opposite fractal
+  regime_gate: SMA(50) side
+  shared_services: [structure_engine, trailing_exit_engine.fractal]
+
+prerequisites:
+  - "G2 must measure the average distance between fractal confirmation and the
+     entry level: a fractal at bar N is only knowable at bar N+2, and if
+     entries routinely arrive after the move, the strategy is a mirage
+     regardless of the backtest."
+
+risks_and_guards:
+  - NO lookahead — fills never earlier than the N+2 confirmation bar; never
+    use provisional current-bar fractals in live code.
+  - "Third implementation of trend-filter + trailing-stop (with supertrend_rsi,
+    donchian_pullback): near-substitutes, pick the best per instrument."
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Exit rule (unmarked on card) resolved to the fractal trail, matching the
+     'Williams Trailing Stops' indicator named on the card."

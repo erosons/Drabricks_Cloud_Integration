@@ -1,0 +1,48 @@
+module: cpr_day_router
+skills: [23, 24]
+archetype: regime-classifier + two child behaviours
+tier: swing
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    CPR width (|TC - BC| from prior-session OHLC) forecasts day type: narrow
+    band -> expansion/trend day -> trade the directional break away from the
+    band (skill 23); wide band -> rotational day, band acts as genuine S/R ->
+    trade reactions at the band in the prevailing direction (skill 24). The
+    width percentile is a pre-open, deterministic regime switch.
+  markets: [MES, MNQ, ES, NQ]
+  timeframe: intraday bars on daily CPR
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: at most one mode armed per session
+
+mechanics:
+  classification: >
+    CPR width percentile over cpr_width_lookback_sessions (60);
+    <= narrow_percentile (30) -> narrow_mode; >= wide_percentile (70) ->
+    wide_mode; in between -> module stands down. Modes are mutually exclusive
+    per session by construction.
+  narrow_mode: breakout — close beyond TC (long) / BC (short) with buffer;
+               stop beyond the opposite band line; target next pivot level
+  wide_mode: band_reaction — price enters the band and closes back out on the
+             favorable side (same close-back-through test as pinbar/vwap fades);
+             stop beyond the band; target next pivot level
+  regime_gate: this module IS a regime input; it also feeds regime_classifier
+  shared_services: [levels_service.cpr, regime_classifier]
+
+prerequisites:
+  - "MANDATORY pre-build study (playbook): bucket ES/NQ sessions by CPR-width
+     percentile and measure realized range / directional persistence / how often
+     the band holds. If width does not predict day type on our instruments,
+     both children fall together — cheap to learn early, blocks G2."
+
+risks_and_guards:
+  - Wide-CPR days can still trend; wide_mode carries fade-on-trend-day risk —
+    hard stop beyond the band, no repeated re-entries.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Narrow/wide thresholds unspecified on cards: resolved as percentiles
+     (30/70) rather than absolute ticks so they transfer across instruments."

@@ -1,0 +1,47 @@
+module: vwap_band_fade
+skills: [16]
+archetype: fade-at-statistical-extreme
+tier: scalp
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    On rotational days, price stretched to an outer VWAP sigma band reverts to
+    VWAP; the bands quantify "stretched" objectively. Two-stage exit: T1 at
+    VWAP, T2 at the opposite band.
+  markets: [MES, MNQ]
+  timeframe: intraday
+  session: rth, after VWAP maturity (vwap_warmup_minutes)
+  target_ret_dd: 2.0
+  expected_frequency: low by construction — outer bands are rarely reached
+
+mechanics:
+  setup: price reaches the entry_band_sigma (2; test 2 vs 3) band
+  entry: close back inside the band (confirmation close_back_inside — never a
+         naked touch, which would buy straight-through breakdowns)
+  stop: beyond the band extreme
+  targets: t1 vwap, t2 opposite_band (needs >= 2 contracts for the ladder)
+  exit: ladder or stop
+  regime_gate: >
+    vwap_flat_only — MANDATORY. Only fade when |VWAP slope| is below
+    vwap_slope_flat_threshold (rotational day). Band rides on trend days are
+    how mean-reversion systems die; this gate is the single most important
+    condition and is never optional.
+  shared_services: [levels_service.vwap_bands, regime_classifier]
+
+prerequisites: []
+
+risks_and_guards:
+  - mutually_exclusive_with vwap_rsi_pullback — opposite-direction uses of the
+    same indicator must not run simultaneously on one instrument.
+  - No re-entry laddering against a directional move.
+
+ambiguities_open:
+  - "Card ambiguous on which band (2 vs 3 sigma) — G1 passes with the fork
+     encoded as a tested parameter, but the choice must be settled per
+     instrument in G2 before G3."
+
+ambiguities_resolved:
+  - "Trend-day protection (absent on the card) resolved as the vwap_flat_only
+     regime gate."

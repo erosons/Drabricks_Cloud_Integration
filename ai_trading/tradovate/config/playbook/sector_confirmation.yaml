@@ -1,0 +1,42 @@
+module: sector_confirmation
+skills: [11]
+archetype: regime-classifier / cross-market gate
+tier: gate                       # filter, not a strategy — never places orders
+priority: 3
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    A single index's move is partly explained by its peers; divergence between
+    correlated indices (NQ making highs while RTY fails) is a caution signal.
+    Futures translation of the card's sector-vs-constituent idea:
+    cross-index/breadth confirmation as a gate layered on other modules.
+  markets: [applies to MES/ES entries, reading MNQ/NQ and M2K/RTY]
+  timeframe: same as the gated module
+  session: rth
+  target_ret_dd: n/a — a gate is judged by the improvement it adds
+  expected_frequency: n/a
+
+mechanics:
+  gate: cheap_test_first — "ES longs only when NQ is above its VWAP/EMA"
+        (mirror shorts); richer breadth inputs only if the cheap version
+        earns its keep
+  shared_services: [regime_classifier]
+
+prerequisites:
+  - "Measure incremental edge on EXISTING data before building any real-time
+     multi-feed dependency — this is the highest data-infrastructure cost in
+     the deck for a filter whose value is unproven on our instruments."
+  - Multi-symbol subscriptions draw on the single gateway session's MD budget
+    (README §17) — scope the subscription cost before building.
+
+risks_and_guards:
+  - Original card is stock-picking (sector -> constituent); the futures
+    version is an analogy, not a port — hold it to the data.
+
+ambiguities_open:
+  - "Card rules side never captured; the gate definition above is inferred
+     from the chart face. Acceptable for a gate candidate, but the cheap test
+     must define its own success criteria before G2."
+
+ambiguities_resolved: []

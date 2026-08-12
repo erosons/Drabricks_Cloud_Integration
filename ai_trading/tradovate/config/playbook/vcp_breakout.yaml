@@ -1,0 +1,47 @@
+module: vcp_breakout
+skills: [29]
+archetype: compression-breakout (pullback-depth sensor)
+tier: swing                      # daily/4H; long-side pattern
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Progressively shallower pullbacks under a flat resistance ceiling indicate
+    supply absorption; the break of the ceiling triggers with the tightest
+    structural stop in the deck (below the final, shallowest contraction).
+    Third sensor of the compression family (volume, band width, pullback
+    depth).
+  markets: [MES, MGC]
+  timeframe: daily / 4H
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: rare — strict criteria produce few signals
+
+mechanics:
+  setup: min_contractions (2) successive pullbacks, each depth <=
+         contraction_ratio (0.7) x the previous; flat-ish ceiling across the
+         base highs; volume_dry_up_filter through the contractions
+  entry: close above the ceiling with buffer
+  stop: last contraction low (stop last_contraction_low)
+  targets: measured move or trailing engine
+  exit: brackets / trail
+  regime_gate: prior uptrend into the base; long_only (equity-native pattern
+               has no short construction on the card)
+  shared_services: [structure_engine, trailing_exit_engine]
+
+prerequisites:
+  - "Equity-native pattern: the supply-absorption rationale (finite float)
+     does not transfer to index futures — validate on futures data before
+     trusting; if it works there, it works for a different reason than the
+     theory claims."
+
+risks_and_guards:
+  - Few signals => weak statistics on one instrument; test across several and
+    a long history, and resist loosening criteria to manufacture trades —
+    that's how this pattern gets curve-fit.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Entry/stop/target (absent on the card face) locked from the classic VCP
+     construction: ceiling break entry, final-contraction-low stop."

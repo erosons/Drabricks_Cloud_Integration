@@ -1,0 +1,45 @@
+module: donchian_pullback
+skills: [17]
+archetype: trend-pullback + trailing exit
+tier: swing
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    In a trend riding the Donchian(20) extreme, a pullback to the channel
+    mid-line that holds is a continuation entry — the Turtle framework's
+    indicator applied as a pullback rather than a breakout. Single-parameter,
+    purely price-based, instrument-agnostic.
+  markets: [MES, MGC, MCL]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: few per week
+
+mechanics:
+  trend: upper channel made a new high within the last N bars (mirror short)
+  setup: pullback to within pullback_tolerance_channel_width (0.25) of the
+         mid-line without closing beyond it (pullback_target mid_line)
+  entry: resumption bar close, or stop above the pullback bar's high
+  stop: pullback swing low (stop pullback_swing_low)
+  targets: none fixed — trend ride
+  exit: close beyond the mid-line against the position (exit close_below_mid;
+        trailing_exit_engine.donchian_mid)
+  regime_gate: pair with a faster confirmation (Supertrend flip or EMA
+               separation) — the channel lags reversals by up to 20 bars
+  shared_services: [trailing_exit_engine.donchian, regime_classifier]
+
+prerequisites: []
+
+risks_and_guards:
+  - Card left stop and target undefined; defaults above are locked before
+    testing so results are reproducible.
+  - Period chosen out-of-sample from the Turtle set (10/20/55), never by
+    picking the prettiest backtest.
+  - near_substitute_of supertrend_rsi — run ONE of the pair per instrument.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Stop/target gap on the card closed with locked defaults (swing-low stop,
+     mid-line trail)."

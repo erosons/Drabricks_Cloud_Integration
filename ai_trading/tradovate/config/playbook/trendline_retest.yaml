@@ -1,0 +1,47 @@
+module: trendline_retest
+skills: [30]
+archetype: level-break-retest (diagonal-level provider)
+tier: swing
+priority: 3
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    Break-and-retest of a diagonal boundary — structurally identical to
+    pivot_levels' retest mode with a diagonal instead of horizontal level. The
+    marginal build is one level provider; everything else (break logic, retest
+    window, hold confirmation, brackets) is shared. Uses a regression channel,
+    not hand-drawn trendlines, for reproducibility.
+  markets: [MES]
+  timeframe: swing bars
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: low
+
+mechanics:
+  level: linear regression channel bound over regression_bars (50)
+         (level_source regression_channel — deterministic, no anchor
+         selection, the automatable substitute recommended for Gann/skill 14)
+  entry: close beyond the bound with buffer; then retest within tolerance
+         inside the window; hold confirmation close-back-through
+  stop: beyond the retest extreme
+  targets: channel height projected, or trailing engine
+  exit: brackets / trail
+  regime_gate: none intrinsic
+  shared_services: [levels_service, structure_engine]
+
+prerequisites:
+  - Build only after pivot_levels is running — this adds a level provider,
+    not a new edge.
+  - "Horizontal-vs-diagonal is a testable claim: horizontal levels attract
+     resting orders (there is no order book at 'the trendline'); run both
+     providers through the same engine and let the data decide."
+
+risks_and_guards:
+  - If the diagonal provider shows no edge over horizontal levels, retire the
+    card and keep the provider code shelved.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Trendline construction resolved to regression channel (reproducible)
+     over pivot-anchored hand lines."

@@ -1,0 +1,45 @@
+module: ema_snapback_scalp
+skills: [6, 5]                   # skill 5's signal folded in; martingale sizing DISCARDED
+archetype: mean-reversion-to-mean
+tier: scalp
+priority: 1
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    A 5m candle fully detached from EMA7 (no touch) marks short-term
+    overextension; the snap-back to the EMA is tradable via a trailing stop
+    entry that only fills when momentum actually turns. Skill 5's SMA-stretch
+    signal is the same thesis and is folded in; its martingale ladder is
+    structurally excluded.
+  markets: [MNQ, MES]
+  timeframe: 5m (timeframe_minutes)
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: several per session in normal volatility
+
+mechanics:
+  setup: candle fully beyond EMA7 with detachment >= detachment_min_atr (0.5)
+  entry: buy stop at the detached candle's high (mirror short); each newer
+         qualifying candle replaces the trigger (cancel-replace trailing entry)
+  stop: swing low of the detachment sequence
+  targets: the EMA7 line itself — dynamic, exit modified each bar
+  exit: EMA touch, or time_stop_bars (12) if the EMA is never reached
+        (trend-day guard)
+  regime_gate: none intrinsic; time stop is the trend-day protection
+  shared_services: [execution_guards]
+
+prerequisites: []
+
+risks_and_guards:
+  - Reward per trade is small; min_reward_to_cost_multiple guard applies —
+    shallow detachments on MES may not clear round-trip cost.
+  - R:R frequently worse than 1:1; viability depends on hit rate — measure in
+    G2, do not assume.
+  - Cancel-replace churn draws on the gateway rate budget; idempotent order IDs.
+  - "sizing is flat — NEVER martingale (playbook skill-5 verdict, an invariant)."
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Skill 6 card shows EMA9 overlay but rules text says EMA7 — EMA7 per rules."
+  - "Skill 5 sizing question settled: signal kept, martingale discarded."

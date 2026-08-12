@@ -1,0 +1,43 @@
+module: pinbar_zone_fade
+skills: [4]
+archetype: fade-at-structural-extreme
+tier: swing                      # 15m minimum — pinbars are noise on 1m
+priority: 2
+status_requested: idea
+
+goal:
+  edge_hypothesis: >
+    A rejection candle (long wick, small body) that trades into a session-level
+    zone and closes back on the favorable side shows the level held; trade the
+    rotation to the opposite zone. Range-regime only — a pinbar against a
+    strong EMA trend is a low-quality countertrend fade.
+  markets: [MES]
+  timeframe: "15m or higher (min_timeframe_minutes)"
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: low
+
+mechanics:
+  zone: session extremes (zone_source session_extremes) as a level +/- ATR band
+  setup: pinbar with wick >= wick_body_ratio (2.0) x body penetrating the
+         zone, closing back beyond it (close is the confirmation, not the wick)
+  entry: on/after the confirming close
+  stop: beyond the wick extreme + stop_buffer_ticks (3) — index futures sweep
+        obvious wicks
+  targets: opposite zone (target opposite_zone); skip if range width <
+           min_range_to_risk (2.0) x pinbar risk
+  exit: brackets
+  regime_gate: range_only — MANDATORY, from the regime classifier; no pinbar
+               fades against an EMA trend, ever
+  shared_services: [levels_service.session_extremes, regime_classifier]
+
+prerequisites: []
+
+risks_and_guards:
+  - Highest-risk archetype to automate (reversal fade); the regime gate is the
+    difference between a strategy and a donation.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Stop placement resolved to wick extreme + buffer (card implied exact
+     wick; futures sweep behavior demands the buffer)."
