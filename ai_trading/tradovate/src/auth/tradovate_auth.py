@@ -1,3 +1,4 @@
+
 """Tradovate authentication — access token request + renewal (§18, docs/API-document.md).
 
 Credentials come from environment variables only (§21): TRADOVATE_USERNAME,
@@ -62,7 +63,6 @@ class Credentials:
             cid=int(os.environ["TRADOVATE_CID"]),
             sec=os.environ["TRADOVATE_SECRET"],
             device_id=os.environ["TRADOVATE_DEVICE_ID"],
-            app_version=os.environ.get("TRADOVATE_APP_VERSION", "1.0"),
         )
 
     def request_body(self) -> dict:
