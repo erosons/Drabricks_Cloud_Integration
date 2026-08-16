@@ -38,9 +38,23 @@ Selected automatically from the `mode` switches (§2): demo unless
 ```
 
 Success → `{ "accessToken": "...", "expirationTime": "ISO-8601", ... }`
-(also `mdAccessToken` for the MD socket). Tokens live ~90 minutes; the bot
-renews at 60 via `GET /auth/renewaccesstoken` (Authorization header) which
-returns a fresh `expirationTime` **⚠ verify at demo soak**.
+(also `mdAccessToken` for the MD socket, plus account flags: `userStatus`,
+`hasMarketData`, `hasLive`, `hasFunded`). Tokens live ~120 minutes; the bot
+renews at 60 via `GET /auth/renewaccesstoken` (Authorization header), which
+returns the full token payload again — **✓ verified on demo 2026-08-16**.
+
+Account-shape notes verified on demo:
+* Google-SSO accounts authenticate with `name: "Google:<numeric id>"` —
+  not the email address.
+* `appId`/`appVersion` must match the values registered with the API key.
+* **API-key permission scopes gate everything past auth**: with no scopes
+  granted, `account/list` and `user/syncrequest` return 401
+  `Access is denied` (REST and WS alike) and `md/subscribeQuote` returns
+  `Symbol is inaccessible` / `UnknownSymbol` even though auth, renewal,
+  and both websocket authorizations succeed. Scopes are granted in the
+  Tradovate dashboard when editing the API key (Account: Read,
+  Orders: Full, Positions: Read, Contract Library: Read,
+  Market Data: Read as the bot's minimum set).
 
 ### Time-penalty responses
 
@@ -106,7 +120,8 @@ Frames are a single indicator char + optional JSON payload:
 * **Requests** are text: `url\nid\nquery\nbody` — `id` is a client counter;
   responses echo it as `{"i": id, "s": status, "d": data}`.
 * **Authorize**: send request with url `authorize`, body = the access token
-  (MD socket: `mdAccessToken`).
+  (MD socket: `mdAccessToken`) — **✓ both sockets verified on demo
+  2026-08-16 with this codebase's frame codec**.
 * **Client heartbeat**: the literal string `[]` roughly every 2.5 s —
   without it the server drops the connection.
 * **Market data**: on the MD socket, `md/subscribeQuote`,
