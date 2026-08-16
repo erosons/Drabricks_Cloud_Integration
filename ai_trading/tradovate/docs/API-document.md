@@ -1,1 +1,128 @@
-### Tradovate API Access :https://support.tradovate.com/s/article/Tradovate-API-Access?language=en_US
+# Tradovate API — Endpoint & Protocol Reference
+
+The subset of the Tradovate API this bot uses, with exact shapes. Sources:
+the official tutorial repo ([tradovate/example-api-js](https://github.com/tradovate/example-api-js),
+verified 2026-08-16) and the API reference at <https://api.tradovate.com>.
+Items marked **⚠ verify at demo soak** are shapes to confirm against the demo
+environment during roadmap Phase 8 before anything touches live.
+
+Constraint-level rules (rate caps, single-session, `isAutomated`, penalty
+tickets, auto-liquidation) live in `README.md` §17; this file is the
+wire-level companion.
+
+## Environments
+
+| | REST | WebSocket |
+|---|---|---|
+| Demo | `https://demo.tradovateapi.com/v1` | `wss://demo.tradovateapi.com/v1/websocket` |
+| Live | `https://live.tradovateapi.com/v1` | `wss://live.tradovateapi.com/v1/websocket` |
+| Market data (both) | — | `wss://md.tradovateapi.com/v1/websocket` |
+
+Selected automatically from the `mode` switches (§2): demo unless
+`dry_run: false` **and** `live_trading: true`.
+
+## Authentication
+
+`POST /auth/accesstokenrequest` — body:
+
+```json
+{
+  "name":       "<TRADOVATE_USERNAME>",
+  "password":   "<TRADOVATE_PASSWORD>",
+  "appId":      "<TRADOVATE_APP_ID>",
+  "appVersion": "1.0",
+  "cid":        "<TRADOVATE_CID, integer>",
+  "sec":        "<TRADOVATE_SECRET>",
+  "deviceId":   "<TRADOVATE_DEVICE_ID, stable per deployment>"
+}
+```
+
+Success → `{ "accessToken": "...", "expirationTime": "ISO-8601", ... }`
+(also `mdAccessToken` for the MD socket). Tokens live ~90 minutes; the bot
+renews at 60 via `GET /auth/renewaccesstoken` (Authorization header) which
+returns a fresh `expirationTime` **⚠ verify at demo soak**.
+
+### Time-penalty responses
+
+Any endpoint may answer with a penalty instead of data:
+
+```json
+{ "p-ticket": "<code>", "p-time": 42, "p-captcha": false }
+```
+
+* wait `p-time` **seconds**, then retry the SAME request with `"p-ticket"`
+  added to the body;
+* `p-captcha: true` cannot be resolved by a bot — log, alert, and back off
+  an hour (always the case for over-called `accesstokenrequest`);
+* the gateway persists unexpired tickets so a crash-restart cannot
+  hot-loop the endpoint (attestation #21–23).
+
+## Accounts & orders (REST, Authorization: `Bearer <accessToken>`)
+
+| Endpoint | Use |
+|---|---|
+| `GET /account/list` | account id + spec discovery at startup |
+| `GET /cashBalance/getcashbalancesnapshot` (POST body `{accountId}`) | equity snapshot for sizing + margin monitor **⚠ verify at demo soak** |
+| `POST /order/placeorder` | plain entry/exit |
+| `POST /order/placeoso` | entry + server-side protective stop (the §7 bracket) |
+| `POST /order/modifyorder` | trailing engine moving the resting stop |
+| `POST /order/cancelorder` | working-order cancel (news blackout start) |
+| `POST /order/liquidateposition` | flatten one product (15:55 ET, disconnect) |
+| `POST /order/cancelallorders` | belt-and-braces with flatten **⚠ verify at demo soak** |
+
+`placeorder` body (required fields marked):
+
+```json
+{
+  "accountSpec": "myAccountSpec",
+  "accountId":   12345,
+  "action":      "Buy",            // required: Buy | Sell
+  "symbol":      "MESU6",          // required: ACTIVE month, never the root
+  "orderQty":    1,                // required
+  "orderType":   "Limit",          // required: Market|Limit|Stop|StopLimit|
+                                   //   MIT|TrailingStop|TrailingStopLimit
+  "price":       6420.25,          // Limit/StopLimit
+  "stopPrice":   6400.00,          // Stop/StopLimit
+  "timeInForce": "Day",
+  "isAutomated": true              // MANDATORY for this bot, every order (§17)
+}
+```
+
+`placeoso` = a `placeorder` body plus `bracket1` (and optional `bracket2`),
+each a child spec like `{ "action": "Sell", "orderType": "Stop",
+"stopPrice": ... }` **⚠ verify exact bracket fields at demo soak**.
+
+## WebSocket protocol (trading and MD sockets share it)
+
+Frames are a single indicator char + optional JSON payload:
+
+| Frame | Meaning |
+|---|---|
+| `o` | socket open — client must now authorize |
+| `h` | server heartbeat |
+| `a[...]` | array of data/response messages (may batch several) |
+| `c` | close |
+
+* **Requests** are text: `url\nid\nquery\nbody` — `id` is a client counter;
+  responses echo it as `{"i": id, "s": status, "d": data}`.
+* **Authorize**: send request with url `authorize`, body = the access token
+  (MD socket: `mdAccessToken`).
+* **Client heartbeat**: the literal string `[]` roughly every 2.5 s —
+  without it the server drops the connection.
+* **Market data**: on the MD socket, `md/subscribeQuote`,
+  `md/subscribeDOM`, `md/subscribeHistogram`, `md/getChart` with body
+  `{"symbol": "MESU6"}`; unsubscribe via the matching `md/unsubscribe*`.
+  Under load, frames may batch several symbols and drop stale
+  intermediate updates — the DOM book must treat gaps as
+  drop-and-resync, never assume continuity (§17, attestation #24–25).
+* **User data**: `user/syncrequest` on the trading socket streams order,
+  fill, and position events **⚠ verify event shapes at demo soak**.
+
+## Design mapping
+
+| Concern | Module |
+|---|---|
+| token + renewal | `src/auth/tradovate_auth.py` |
+| single session, rate budget, penalty tickets | `src/client/gateway.py` |
+| REST calls | `src/client/rest.py` |
+| frame codec + reconnecting socket | `src/client/websocket.py` |
