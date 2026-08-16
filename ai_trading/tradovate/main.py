@@ -140,6 +140,11 @@ async def amain() -> int:
     os.environ.setdefault("BOT_PRODUCT", args.product)
     config = load_config(args.config_dir)
 
+    metrics_port = os.environ.get("METRICS_PORT")
+    if metrics_port and not args.synthetic:
+        from src.utils.metrics import start_metrics_server
+        start_metrics_server(int(metrics_port))
+
     if args.product not in config.products:
         log.error("unknown product %s", args.product)
         return 2

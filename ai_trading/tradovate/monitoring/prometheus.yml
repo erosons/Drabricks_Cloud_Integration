@@ -1,0 +1,15 @@
+# Prometheus scrape config for the bot fleet (§15).
+# Product N (launcher order) exports on metrics_base_port + N (config.yaml).
+# Internal-only: market-data-derived metrics must never be exposed
+# externally (§17 attestation #31).
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: tradovate-bot
+    static_configs:
+      - targets:
+          - "localhost:8100"   # first launched product
+          - "localhost:8101"
+          - "localhost:8102"
+          - "localhost:8103"
