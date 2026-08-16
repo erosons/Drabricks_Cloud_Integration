@@ -73,16 +73,18 @@ Any endpoint may answer with a penalty instead of data:
 
 ## Accounts & orders (REST, Authorization: `Bearer <accessToken>`)
 
-| Endpoint | Use |
-|---|---|
-| `GET /account/list` | account id + spec discovery at startup |
-| `GET /cashBalance/getcashbalancesnapshot` (POST body `{accountId}`) | equity snapshot for sizing + margin monitor **⚠ verify at demo soak** |
-| `POST /order/placeorder` | plain entry/exit |
-| `POST /order/placeoso` | entry + server-side protective stop (the §7 bracket) |
-| `POST /order/modifyorder` | trailing engine moving the resting stop |
-| `POST /order/cancelorder` | working-order cancel (news blackout start) |
-| `POST /order/liquidateposition` | flatten one product (15:55 ET, disconnect) |
-| `POST /order/cancelallorders` | belt-and-braces with flatten **⚠ verify at demo soak** |
+| Endpoint | Use | Soak |
+|---|---|---|
+| `GET /account/list` | account id + spec discovery at startup | ✓ 2026-08-16 |
+| `POST /cashBalance/getcashbalancesnapshot` `{accountId}` | equity for sizing + margin monitor; keys incl. `netLiq`, `totalCashValue`, `initialMargin`, `maintenanceMargin`, `autoLiqLevel`, `openPnL`, `realizedPnL`, `weekRealizedPnL` | ✓ |
+| `GET /contract/find?name=MESU6` / `GET /contract/suggest?t=MES&l=5` | symbol → `contractId` (needed for MD filtering + liquidate) | ✓ |
+| `POST /order/placeorder` | plain entry/exit → `{"orderId"}` | ✓ |
+| `POST /order/placeoso` | entry + server-side stop → `{"orderId","oso1Id"}` | ✓ |
+| `GET /order/item?id=` | order state (`ordStatus`: Working/Rejected/…) | ✓ |
+| `POST /order/modifyorder` | trailing engine moving the resting stop | ⚠ needs open market |
+| `POST /order/cancelorder` | working-order cancel; answers `{"failureReason":"TooLate"}` when the order is already terminal | ✓ |
+| `GET /position/list` | flat-check / reconciliation | ✓ |
+| `POST /order/liquidateposition` | flatten one product (15:55 ET, disconnect) | ⚠ needs open market |
 
 `placeorder` body (required fields marked):
 
@@ -104,7 +106,8 @@ Any endpoint may answer with a penalty instead of data:
 
 `placeoso` = a `placeorder` body plus `bracket1` (and optional `bracket2`),
 each a child spec like `{ "action": "Sell", "orderType": "Stop",
-"stopPrice": ... }` **⚠ verify exact bracket fields at demo soak**.
+"stopPrice": ... }` — **✓ verified on demo**: accepted and returned
+`{"orderId": ..., "oso1Id": ...}`.
 
 ## WebSocket protocol (trading and MD sockets share it)
 
@@ -131,7 +134,12 @@ Frames are a single indicator char + optional JSON payload:
   intermediate updates — the DOM book must treat gaps as
   drop-and-resync, never assume continuity (§17, attestation #24–25).
 * **User data**: `user/syncrequest` on the trading socket streams order,
-  fill, and position events **⚠ verify event shapes at demo soak**.
+  fill, and position events **⚠ still 401 after first scope grant — needs
+  its own permission category on the API key; event shapes unverified**.
+* **Market data entitlement**: with a valid symbol (`contract/find`
+  resolves it) `md/subscribe*` answering `Symbol is inaccessible` means the
+  API key's Market Data scope or the account's market-data/API add-on
+  subscription is missing — not a symbol-format problem.
 
 ## Design mapping
 
