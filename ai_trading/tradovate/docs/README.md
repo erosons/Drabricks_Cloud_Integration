@@ -348,6 +348,36 @@ server-side at the exchange from the moment of fill, and the trailing engine
 (§13) thereafter *modifies* the resting stop rather than holding it locally.
 Every order carries `isAutomated: true` (§17).
 
+### Strategy arbitration — which module owns a product
+
+`max_concurrent_strategies_per_product: 1` (§14) says only **one** module may
+be live on a product; the **strategy router**
+(`shared_services.strategy_router` in `config.yaml`) says *which* one when
+several qualify. Those are two different rules — "only one runs" versus "which
+one wins the tie" — and the tie-breaker is explicit config so it never
+resolves by accident. Selection runs top-to-bottom, each rule narrowing the
+field:
+
+1. **Eligibility** — `enabled: true`, `lifecycle_state` is `live` (or
+   `incubation`, which routes to paper fills), and gates F1–F4 pass.
+2. **Regime specificity** — the module whose declared regime gate most tightly
+   matches the classifier's current state wins: a strong clean trend selects
+   the pure trend-follower, a rotational day selects the fade module. The
+   router selects **before entries are considered** — only the winner is even
+   allowed to look for a signal, so "two strategies want to enter at the same
+   instant" cannot arise by construction.
+3. **Priority** — the playbook build tier breaks regime ties (1 beats 2
+   beats 3).
+4. **Config order** — final deterministic tie-break: first declared under
+   `strategies:` wins. The selection is therefore a pure function of config
+   plus regime state — reproducible bar-for-bar in the backtester (§9), which
+   replays the same router.
+
+The router re-evaluates on regime change or session open — **never
+mid-position**: an open position is always managed to completion by the module
+that opened it (`handoff: flat_only`); the router may switch modules only when
+the product is flat.
+
 ---
 
 ## 8. The Strategy Lifecycle — Gates G0→G6
@@ -497,8 +527,7 @@ separate deployment):
 
 **Risk is configured per product, not globally**: every product entry in
 `products.yaml` carries a required `risk:` block (`max_contracts`,
-`risk_per_trade_pct`, `stop_loss_usd`, `risk_reward_ratio`,
-`partial_exit_ladder`, `breakeven_after_t1`, `trail_step_pct`,
+`risk_per_trade_pct`, `stop_loss_usd`, `risk_reward_ratio`, `trail_step_pct`,
 `daily_loss_limit_usd`) so clients control risk values product by product.
 A product with no risk block fails config validation at startup — there is no
 generic fallback to inherit.
@@ -509,12 +538,58 @@ generic fallback to inherit.
 stop_ticks = ceil(stop_loss_usd / (tick_value × max_contracts))
 tp_ticks   = stop_ticks × risk_reward_ratio
 trail_step = tp_ticks × trail_step_pct        (in ticks, floor 1)
-
-Example — MES (tick_value $1.25), stop_loss_usd $50, 1 contract:
-  stop_ticks = 40 ticks (10.00 index pts)   tp_ticks = 120 ticks (30.00 pts)
-  Milestone 1: SL → break-even    Milestone N: SL += trail_step
-  SL only advances — never retreats.
 ```
+
+The trail is **discrete (quadrant-stepped), not continuous** — and
+`trail_step_pct` is a fraction of the **entry→target distance**, not of the
+entry price. With `trail_step_pct: 0.25` the entry→TP journey splits into four
+quadrants of `trail_step` ticks each; the stop sits still inside a quadrant and
+jumps only when price completes one:
+
+- Milestone `k` fires when price reaches `entry + k × trail_step` (long; mirrored
+  for shorts). The stop then moves to `entry + (k−1) × trail_step` — one
+  quadrant behind price. `k = 1` is break-even.
+- Each R-level is converted to a price and rounded to the product's `tick_size`.
+- The stop only ever ratchets toward profit — never retreats, never moves before
+  price has earned the level. Milestone `N` (= `1 / trail_step_pct`) is the TP:
+  full exit.
+
+Example — YM (tick_value $5, tick 1 pt), `stop_loss_usd` $500,
+`risk_reward_ratio` 3, 1 contract, entry 40,000 long
+(stop = 100 pts = 1R, TP = 300 pts, trail_step = 75 pts):
+
+| Price reaches      | Quadrant done | Stop moves to        | Locked        |
+|--------------------|---------------|----------------------|---------------|
+| 40,000 (entry)     | —             | 39,900 (−1R)         | −$500 at risk |
+| 40,075 (+0.75R)    | Q1            | 40,000 (break-even)  | $0            |
+| 40,150 (+1.5R)     | Q2            | 40,075 (+0.75R)      | +$375         |
+| 40,225 (+2.25R)    | Q3            | 40,150 (+1.5R)       | +$750         |
+| 40,300 (+3R = TP)  | Q4            | — full exit          | +$1,500       |
+
+Partial exits are a **strategy** concern, not a product-risk one — the risk
+block deliberately carries no partial-exit ladder. Strategies that scale out
+(e.g. `two_legged_pullback`'s t1/t2 bracket) define those targets in their own
+`params` block in `config.yaml`, gated by `min_contracts_for_partials`; with
+1 contract the quadrant trail to the `risk_reward_ratio` target governs the
+whole position. When strategy partials and the trail coexist, the live stop is
+always the **maximum** (most profit-protective) of every mechanism's level —
+the stop still only ratchets up.
+
+Implementation-wise the quadrant trail is a **provider of the shared
+`trailing_exit_engine`** (`shared_services` in `config.yaml`), selected the
+same way strategies are: every provider carries an `enabled` flag, and
+**exactly one may be `enabled: true`** — that one is the engine default
+(`quadrant` today). Zero or two-plus enabled providers fail config validation
+at startup, the same no-silent-fallback rule as the per-product risk block.
+The quadrant provider takes no parameters of its own — its geometry is derived
+per product from the risk block (`risk_reward_ratio` × `trail_step_pct`).
+Strategies whose edge is defined by a structural exit may name an indicator
+provider in their own params (`supertrend | sma20 | donchian_mid | fractal |
+sar`); that override applies only while the strategy is the live module on the
+product, and since `max_concurrent_strategies_per_product` is 1, **each
+product has exactly one trail provider in use at any moment**. Whichever
+provider is active, the product risk block's hard caps and the ratchet-only
+stop invariant still apply.
 
 ### Position sizing (fixed-fractional, Monte Carlo-calibrated)
 
@@ -893,7 +968,10 @@ writes only research tables.
 
 ## 21. Configuration Reference
 
-See [`config/config.yaml`](../config/config.yaml) (inline-documented). Summary:
+See [`config/config.yaml`](../config/config.yaml) (inline-documented). For a
+non-technical, knob-by-knob walkthrough with worked examples, see
+["The control panel"](README_v1_plain-english.md#the-control-panel-configconfigyaml-knob-by-knob)
+in the plain-English README. Summary:
 
 | Block | Key settings |
 |-------|--------------|
@@ -902,7 +980,7 @@ See [`config/config.yaml`](../config/config.yaml) (inline-documented). Summary:
 | `session` | `open: 08:00`, `close: 16:00` ET, `flatten_buffer_minutes: 5`, Sun–Fri |
 | `news_guard` | USD + high impact, 15 min before/after, daily 18:00 ET refresh, `position_policy` |
 | `contract_resolver` | daily 18:30 ET, `max_volume_and_oi` rule, 48 h staleness guard |
-| `shared_services` | structure engine, levels service, regime classifier, trailing-exit engine, execution guards |
+| `shared_services` | structure engine, levels service, regime classifier, strategy router (arbitration, §7), trailing-exit engine, execution guards |
 | `strategies` | 23 playbook modules with skill number, tier, priority, and `enabled` flags — `enabled` now means "eligible for the factory"; `strategy_lifecycle` (DB) decides what trades |
 | `playbook/` | one card per module — the G1 artifact (§8): goal, mechanical rules, ambiguity ledger; params stay in `strategies.<module>.params` (one source of truth each) |
 | `research` | gate thresholds — see below |

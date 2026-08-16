@@ -173,6 +173,79 @@ ladder sits *behind* all of it:
 
 ---
 
+## The control panel (`config/config.yaml`), knob by knob
+
+If the bot were a car, `config.yaml` is the dashboard: the ignition, the clock, the
+radio presets. Two things it deliberately does **not** contain: **money rules** (how
+many contracts, where stops go, daily loss limits — those live per-market in
+`products.yaml`, and the bot refuses to start if a market is missing them) and
+**passwords** (those come from environment variables, never from a file you might
+share). Here's what each part of the dashboard does:
+
+**The ignition (`mode`).** Two switches combine into three positions, like a car with
+a valet key. Both off = *rehearsal mode*: the bot announces "I would buy YM here" but
+sends nothing anywhere (today's setting). First switch on = orders go to a **practice
+account** with fake money. Both on = real money. You cannot reach real money by
+flipping one switch by accident — it takes two deliberate moves, plus the approval
+ladder still standing behind them.
+
+**Business hours (`session`).** The bot works 8 AM to 4 PM New York time, and at
+**3:55 PM it closes everything and goes home, no exceptions** — like a shopkeeper who
+never sleeps in the store. Why it matters: futures trade overnight, and overnight is
+where thin markets and margin surprises live. This bot simply refuses to be there.
+
+**The news lookout (`news_guard`).** Every evening it reads a public calendar of
+scheduled economic announcements and marks the big red ones. *Example: the Fed
+announces interest rates at 2:00 PM Wednesday. From 1:45 to 2:15 the bot won't open
+anything new and cancels any waiting entry orders — because in those minutes prices
+can jump over your stop like it isn't there. A position already open is held, not
+panic-sold.*
+
+**The "which contract?" picker (`contract_resolver`).** "YM" isn't one thing — it's a
+new contract every three months, like milk cartons with different expiry dates. Once
+a day the bot checks the exchange's official numbers and trades whichever carton the
+whole market is currently drinking from (highest volume). If its data goes stale for
+two days, it refuses to trade rather than guess.
+
+**The shared toolbox (`shared_services`).** Six tools every strategy borrows instead
+of building badly for itself:
+
+- a **map maker** that marks swing highs/lows and important price levels
+  (yesterday's high, VWAP bands, floor pivots);
+- a **weather reporter** (regime classifier) that declares "today is trending" or
+  "today is choppy," so trend-chasers stay in bed on choppy days and dip-buyers stay
+  in bed on trending ones;
+- a **referee** (strategy router) — only ONE strategy may play per market at a time,
+  and the referee picks it *before* anyone is allowed to look for a trade. Best
+  regime fit wins; ties go to the higher-priority strategy; and it never swaps
+  players mid-trade — whoever opened a position finishes it;
+- the **stop-mover** (trailing exit engine) with the quadrant trail as default.
+  *Example: buy YM at 40,000 risking $500, target 40,300. Price hits 40,075 → stop
+  moves to break-even (you can no longer lose). 40,150 → stop locks +$375. 40,225 →
+  locks +$750. 40,300 → done, +$1,500. The stop only ever climbs, never slides back.*
+  Exactly one trail style may be switched on at a time — turning on two is a
+  configuration error and the bot won't start;
+- a **bouncer** (execution guards) that turns away any trade where the expected move
+  wouldn't even cover twice the cost of getting in and out, or where the stop would
+  risk more than $50.
+
+**The contestant list (`strategies`).** All ~23 playbook strategies written down with
+their exact recipes (so results are reproducible), each with an `enabled` on/off flag.
+Today only one is on: `order_flow_scalp`, the engine carried over from the old kraken
+bot. And remember — `enabled: true` only means "allowed to audition." The approval
+ladder decides who actually trades.
+
+**The fuse box (`risk_operations` + `monitoring`).** If the internet connection drops,
+close everything immediately. If the whole account loses more than the daily
+portfolio limit, close everything and stop for the day. Each market writes its own
+log file and health dashboard.
+
+*The one-line summary: `config.yaml` decides **when and how** the bot is allowed to
+act; `products.yaml` decides **how much it may lose trying**; and the approval ladder
+decides **who gets to act at all**.*
+
+---
+
 ## The build order (roadmap)
 
 The live-trading half (phases 1–8 from v0) gets built **first**, because the Research Lab

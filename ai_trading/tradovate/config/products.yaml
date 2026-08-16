@@ -22,10 +22,14 @@
 #                   max_contracts          max absolute net position
 #                   risk_per_trade_pct     % of account risked per R
 #                   stop_loss_usd          hard dollar cap per position
-#                   risk_reward_ratio      fallback TP when no ladder applies
-#                   partial_exit_ladder    t1_rr/t1_fraction/t2_rr partial exits
-#                   breakeven_after_t1     move stop to entry after T1 fills
-#                   trail_step_pct         trail step as fraction of TP range
+#                   risk_reward_ratio      TP distance in R — the quadrant
+#                                          trail's full-exit target
+#                   trail_step_pct         quadrant trail: step as fraction of
+#                                          the ENTRY→TP distance (0.25 = four
+#                                          quadrants of 0.75R at RR 3). Stop
+#                                          jumps one step behind price as each
+#                                          quadrant completes — 1st jump is
+#                                          break-even; ratchets up only
 #                   daily_loss_limit_usd   product stops entering for the day
 #   overrides:    optional per-product strategy overrides (same keys as the
 #                 strategies.<module>.params blocks in config.yaml)
@@ -51,8 +55,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: true
@@ -72,8 +74,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 500.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -93,8 +93,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: true
@@ -114,8 +112,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -135,8 +131,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -156,8 +150,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 500.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -177,8 +169,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -198,8 +188,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -219,8 +207,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -243,8 +229,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -264,8 +248,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -285,8 +267,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -306,8 +286,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -330,8 +308,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -351,8 +327,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -372,8 +346,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -393,8 +365,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -414,8 +384,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -438,8 +406,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -459,8 +425,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -480,8 +444,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -501,8 +463,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -522,8 +482,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -543,8 +501,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -564,8 +520,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -585,8 +539,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -611,8 +563,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -632,8 +582,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -653,8 +601,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -674,8 +620,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -698,8 +642,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -719,8 +661,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -740,8 +680,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -761,8 +699,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -787,8 +723,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -808,8 +742,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -829,8 +761,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -850,8 +780,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -871,8 +799,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -892,8 +818,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 100.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 300.0
     trade: false
@@ -913,8 +837,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false
@@ -934,8 +856,6 @@ products:
       risk_per_trade_pct: 0.5
       stop_loss_usd: 50.0
       risk_reward_ratio: 3.0
-      partial_exit_ladder: { t1_rr: 2.0, t1_fraction: 0.5, t2_rr: 4.0 }
-      breakeven_after_t1: true
       trail_step_pct: 0.25
       daily_loss_limit_usd: 150.0
     trade: false

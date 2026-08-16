@@ -141,13 +141,62 @@ shared_services:
     cpr_wide_percentile: 70          # ≥ → expect rotation → fade/reaction modules
     vwap_warmup_minutes: 30          # no VWAP-based signals until bands mature
 
-  trailing_exit_engine:              # one trail engine, pluggable providers
-    provider: supertrend             # supertrend | sma20 | donchian_mid | fractal | sar
-    supertrend: { atr_period: 10, multiplier: 3.0 }        # skill 12
-    sma: { period: 20 }                                    # skill 10
-    donchian: { period: 20 }                               # skill 17
-    fractal: { left: 2, right: 2 }                         # skill 19
-    sar: { start: 0.02, step: 0.02, max: 0.2 }             # skill 31 (weakest — A/B only)
+  strategy_router:                   # picks THE ONE live module per product
+    # max_concurrent_strategies_per_product = 1 (risk_operations) says only one
+    # module may be live on a product; THIS block says WHICH one when several
+    # qualify — two different rules, and the tie-breaker is explicit so it never
+    # resolves by accident. Selection happens at regime evaluation, BEFORE
+    # entries are considered: only the selected module may even look for a
+    # signal, so "two strategies want to enter at the same instant" cannot
+    # arise by construction.
+    selection_order:                 # applied top-to-bottom; each rule narrows
+      - eligibility                  # enabled: true + lifecycle_state live (or
+                                     #   incubation → paper) + gates F1–F4 pass
+      - regime_specificity           # module whose declared regime gate most
+                                     #   tightly matches the classifier state
+                                     #   (trend/range, CPR width, VWAP slope)
+      - priority                     # playbook build tier: 1 beats 2 beats 3
+      - config_order                 # final deterministic tie-break: first
+                                     #   declared under strategies: wins
+    reevaluate: regime_change_or_session_open
+    handoff: flat_only               # an open position is managed to completion
+                                     # by the module that opened it; the router
+                                     # switches modules only when the product is
+                                     # flat — never mid-position
+
+  trailing_exit_engine:              # ONE trail engine, pluggable providers.
+    # EXACTLY ONE provider may have enabled: true — that is the engine default.
+    # Startup validation fails on zero or on two+ enabled (same rule as the
+    # per-product risk block: no silent fallbacks). A strategy may still name
+    # its own provider (trail_provider / exit in its params); that override
+    # applies only while that strategy is the live module on the product, and
+    # since max_concurrent_strategies_per_product = 1, each product always has
+    # exactly one trail provider in use at any moment.
+    providers:
+      quadrant:
+        enabled: true                # DEFAULT — tick-native milestone trail
+                                     # (README §13); geometry derived per product
+                                     # from the risk block (risk_reward_ratio ×
+                                     # trail_step_pct), no params of its own
+      supertrend:
+        enabled: false               # skill 12
+        atr_period: 10
+        multiplier: 3.0
+      sma:
+        enabled: false               # skill 10
+        period: 20
+      donchian:
+        enabled: false               # skill 17
+        period: 20
+      fractal:
+        enabled: false               # skill 19
+        left: 2
+        right: 2
+      sar:
+        enabled: false               # skill 31 (weakest — A/B only)
+        start: 0.02
+        step: 0.02
+        max: 0.2
 
   execution_guards:                  # apply to every module
     slippage_model_ticks: { ES: 2, NQ: 4, default: 2 }
@@ -467,8 +516,9 @@ strategies:
 #
 # Every product in products.yaml carries its own required `risk:` block
 # (max_contracts, risk_per_trade_pct, stop_loss_usd, risk_reward_ratio,
-# partial_exit_ladder, breakeven_after_t1, trail_step_pct,
-# daily_loss_limit_usd) so clients control risk values per product. There is
+# trail_step_pct, daily_loss_limit_usd) so clients control risk values per
+# product. Partial exits are strategy-level (params blocks below), not
+# product-risk keys. There is
 # deliberately no generic fallback: a product without a risk block fails
 # config validation at startup rather than inheriting someone else's numbers.
 #

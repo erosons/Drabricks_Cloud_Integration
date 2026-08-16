@@ -24,7 +24,7 @@ mechanics:
     must agree. Limit order at best bid (buy) / best ask (sell), tick-quantized,
     active contract month only.
   stop: risk block per product — tick-native progressive trailing SL (README §13)
-  targets: partial_exit_ladder from the product risk block
+  targets: quadrant trail to the risk block's risk_reward_ratio target (README §13)
   exit: trailing engine milestones; hard flatten 15:55 ET
   regime_gate: none of its own — gates F1–F4 + execution guards apply
   shared_services: [execution_guards]
