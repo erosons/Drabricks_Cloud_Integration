@@ -244,25 +244,32 @@ class EmaSnapbackScalp(CardStrategy):
 class EmaSrBreak(CardStrategy):
     name = "ema_sr_break"
     timeframe_min = 5
-    notes = ("levels = prior-session H/L; stop = 5-bar swing; target 2R; "
-             "exit alt close-back-through EMA21")
+    notes = ("levels = prior-session H/L; stop = swing_lookback-bar swing; "
+             "target = target_rr × risk; exit alt close-back-through slow EMA")
+    # B1-grid tunables with the tournament-baseline defaults
+    DEFAULTS = {"min_sep_atr": 0.25, "target_rr": 2.0, "swing_lookback": 5}
 
     def prepare(self, df):
+        sw = int(self.p.get("swing_lookback", self.DEFAULTS["swing_lookback"]))
+        self.min_sep_atr = float(self.p.get("min_sep_atr",
+                                            self.DEFAULTS["min_sep_atr"]))
+        self.target_rr = float(self.p.get("target_rr",
+                                          self.DEFAULTS["target_rr"]))
         daily = df.groupby("session_date").agg(H=("high", "max"),
                                                L=("low", "min")).shift(1)
         lv = daily.reindex(df["session_date"]).set_index(df.index)
         self._cols(df, ema_f=ind.ema(df["close"], self.p["ema_fast"]),
                    ema_s=ind.ema(df["close"], self.p["ema_slow"]),
                    atr=ind.atr(df), ph=lv["H"], pl=lv["L"],
-                   lo5=df["low"].rolling(5).min(),
-                   hi5=df["high"].rolling(5).max())
+                   lo5=df["low"].rolling(sw).min(),
+                   hi5=df["high"].rolling(sw).max())
         self.done_level = None
         return df
 
     def on_bar(self, df, i):
         a = self.a
         sep = a["ema_f"][i] - a["ema_s"][i]
-        min_sep = 0.25 * a["atr"][i]
+        min_sep = self.min_sep_atr * a["atr"][i]
         if np.isnan(a["ph"][i]) or np.isnan(min_sep):
             return None
         if sep > min_sep and a["close"][i] > a["ph"][i] \
@@ -271,14 +278,14 @@ class EmaSrBreak(CardStrategy):
             stop = a["lo5"][i]
             risk = a["close"][i] - stop
             return Entry("buy", "market", None, stop=stop,
-                         target=a["close"][i] + 2 * risk)
+                         target=a["close"][i] + self.target_rr * risk)
         if sep < -min_sep and a["close"][i] < a["pl"][i] \
                 and self.done_level != ("dn", a["pl"][i]):
             self.done_level = ("dn", a["pl"][i])
             stop = a["hi5"][i]
             risk = stop - a["close"][i]
             return Entry("sell", "market", None, stop=stop,
-                         target=a["close"][i] - 2 * risk)
+                         target=a["close"][i] - self.target_rr * risk)
         return None
 
     def manage(self, df, i, pos):
