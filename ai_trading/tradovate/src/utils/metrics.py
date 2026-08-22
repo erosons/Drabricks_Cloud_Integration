@@ -40,8 +40,14 @@ if _PROM:
         "signal": Gauge("bot_signal", "-1 sell / 0 neutral / +1 buy", ["product"]),
         "placed": Counter("bot_orders_placed_total", "Orders placed", ["product"]),
         "filled": Counter("bot_orders_filled_total", "Orders filled", ["product"]),
+        "rejected": Counter("bot_orders_rejected_total", "Order NACKs", ["product"]),
         "sl_hits": Counter("bot_sl_hits_total", "Stop-loss exits", ["product"]),
         "tp_hits": Counter("bot_tp_hits_total", "Take-profit exits", ["product"]),
+        # win/loss = sign of realized P&L (net of fees) when a round trip
+        # closes flat — NOT sl/tp hits: a quadrant-trailed stop above
+        # break-even exits as an sl_hit but counts as a win here
+        "won": Counter("bot_trades_won_total", "Round trips closed ≥ $0", ["product"]),
+        "lost": Counter("bot_trades_lost_total", "Round trips closed < $0", ["product"]),
     }
 
 
@@ -56,7 +62,9 @@ class BotMetrics:
         self._pos, self._sl, self._tp = m["pos"], m["sl"], m["tp"]
         self._signal = m["signal"]
         self._placed, self._filled = m["placed"], m["filled"]
+        self._rejected = m["rejected"]
         self._sl_hits, self._tp_hits = m["sl_hits"], m["tp_hits"]
+        self._won, self._lost = m["won"], m["lost"]
 
     def update_emas(self, fast: float, slow: float, mid: float) -> None:
         if _PROM:
@@ -86,6 +94,15 @@ class BotMetrics:
     def inc_orders_filled(self) -> None:
         if _PROM:
             self._filled.inc()
+
+    def inc_orders_rejected(self) -> None:
+        if _PROM:
+            self._rejected.inc()
+
+    def inc_trade_closed(self, realized_pnl: float) -> None:
+        """One round trip went flat; classify by realized P&L net of fees."""
+        if _PROM:
+            (self._won if realized_pnl >= 0 else self._lost).inc()
 
     def inc_sl_hit(self) -> None:
         if _PROM:

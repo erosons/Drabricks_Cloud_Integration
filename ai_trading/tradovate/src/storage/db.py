@@ -46,6 +46,53 @@ CREATE TABLE IF NOT EXISTS equity_snapshots (
   ts TEXT PRIMARY KEY, realized_pnl REAL, unrealized_pnl REAL, open_positions TEXT
 );
 
+-- Round trips reconstructed from fills: a trip opens on the first fill from
+-- flat and closes when the position returns to flat (bought == sold — the
+-- engine is one-bracket and never flips through zero). This view is the
+-- OF-RECORD source for win/loss stats (Grafana history panels §15); the
+-- Prometheus counters are the disposable live view. usd_per_point =
+-- tick_value / tick_size per products.yaml — extend the CASE when enabling
+-- a product for trading.
+DROP VIEW IF EXISTS v_round_trips;
+CREATE VIEW v_round_trips AS
+WITH running AS (
+  SELECT id, product, contract_code, side, qty, price, fee, ts,
+         SUM(CASE WHEN side = 'buy' THEN qty ELSE -qty END)
+             OVER (PARTITION BY product ORDER BY id) AS pos_after
+  FROM fills
+), preceded AS (
+  SELECT *,
+         COALESCE(LAG(pos_after)
+                  OVER (PARTITION BY product ORDER BY id), 0) AS pos_before
+  FROM running
+), tripped AS (
+  SELECT *,
+         SUM(CASE WHEN pos_before = 0 THEN 1 ELSE 0 END)
+             OVER (PARTITION BY product ORDER BY id) AS trip_no
+  FROM preceded
+)
+SELECT product,
+       MIN(contract_code)                                    AS contract_code,
+       trip_no,
+       MIN(ts)                                               AS opened_ts,
+       MAX(ts)                                               AS closed_ts,
+       SUM(CASE WHEN side = 'buy'  THEN qty ELSE 0 END)      AS bought,
+       SUM(CASE WHEN side = 'sell' THEN qty ELSE 0 END)      AS sold,
+       SUM(CASE WHEN side = 'buy'  THEN qty ELSE 0 END) =
+       SUM(CASE WHEN side = 'sell' THEN qty ELSE 0 END)      AS closed,
+       SUM(CASE WHEN side = 'sell' THEN qty * price
+                                   ELSE -qty * price END)    AS points_pnl,
+       SUM(fee)                                              AS fees,
+       CASE product WHEN 'MES' THEN 5.0
+                    WHEN 'MNQ' THEN 2.0 END                  AS usd_per_point,
+       SUM(CASE WHEN side = 'sell' THEN qty * price
+                                   ELSE -qty * price END)
+         * CASE product WHEN 'MES' THEN 5.0
+                        WHEN 'MNQ' THEN 2.0 END
+         - SUM(fee)                                          AS usd_pnl
+FROM tripped
+GROUP BY product, trip_no;
+
 -- ============ research plane ============
 
 CREATE TABLE IF NOT EXISTS strategy_lifecycle (

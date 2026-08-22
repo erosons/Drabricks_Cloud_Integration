@@ -1,0 +1,33 @@
+# Monitoring stack (§15): Prometheus (live counters) + Grafana with the
+# SQLite datasource plugin (of-record history from data/tradovate_bot.db).
+#
+#     cd monitoring && docker compose up -d
+#     Grafana: http://localhost:3000 (admin/admin on first login)
+#
+# Internal-only: market-data-derived metrics must never be exposed
+# externally (§17 attestation #31) — do not port-forward these beyond
+# the deployment host.
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    network_mode: host          # scrapes the bot processes on localhost:810x
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    network_mode: host          # reaches Prometheus on localhost:9090
+    environment:
+      # community plugin that lets Grafana query the SQLite file directly
+      GF_INSTALL_PLUGINS: frser-sqlite-datasource
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      # the of-record database, read-only — Grafana must never write it
+      - ../data/tradovate_bot.db:/var/lib/grafana-sqlite/tradovate_bot.db:ro
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  prom_data:
+  grafana_data:

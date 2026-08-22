@@ -1,0 +1,113 @@
+{
+  "title": "Tradovate Bot — Trade Success",
+  "uid": "tradovate-success",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "type": "row", "title": "LIVE — Prometheus (resets on restart; the speedometer, not the record)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false, "panels": []
+    },
+    {
+      "type": "stat", "title": "Orders placed (today · live)",
+      "datasource": { "type": "prometheus", "uid": "prom-live" },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
+      "targets": [ { "expr": "sum(increase(bot_orders_placed_total[24h]))", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Orders filled (today · live)",
+      "datasource": { "type": "prometheus", "uid": "prom-live" },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
+      "targets": [ { "expr": "sum(increase(bot_orders_filled_total[24h]))", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Orders rejected (today · live)",
+      "datasource": { "type": "prometheus", "uid": "prom-live" },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 1 },
+      "targets": [ { "expr": "sum(increase(bot_orders_rejected_total[24h]))", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "fixed", "fixedColor": "red" } }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Win rate % (today · live)",
+      "description": "From in-process counters — incomplete after a restart. The of-record number below is the truth.",
+      "datasource": { "type": "prometheus", "uid": "prom-live" },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
+      "targets": [ { "expr": "100 * sum(increase(bot_trades_won_total[24h])) / clamp_min(sum(increase(bot_trades_won_total[24h])) + sum(increase(bot_trades_lost_total[24h])), 1)", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 1, "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }
+    },
+    {
+      "type": "timeseries", "title": "P&L USD (live)",
+      "datasource": { "type": "prometheus", "uid": "prom-live" },
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        { "expr": "bot_realized_pnl_usd", "legendFormat": "realized {{product}}", "refId": "A" },
+        { "expr": "bot_unrealized_pnl_usd", "legendFormat": "unrealized {{product}}", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] }
+    },
+    {
+      "type": "row", "title": "OF RECORD — SQLite fills (the truth; database wins on any disagreement)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }, "collapsed": false, "panels": []
+    },
+    {
+      "type": "stat", "title": "Closed trades (all-time · of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 7 },
+      "targets": [ { "queryText": "SELECT COUNT(*) AS trades FROM v_round_trips WHERE closed = 1", "rawQueryText": "SELECT COUNT(*) AS trades FROM v_round_trips WHERE closed = 1", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0 }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Won (all-time · of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 7 },
+      "targets": [ { "queryText": "SELECT SUM(usd_pnl >= 0) AS won FROM v_round_trips WHERE closed = 1", "rawQueryText": "SELECT SUM(usd_pnl >= 0) AS won FROM v_round_trips WHERE closed = 1", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Lost (all-time · of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 7 },
+      "targets": [ { "queryText": "SELECT SUM(usd_pnl < 0) AS lost FROM v_round_trips WHERE closed = 1", "rawQueryText": "SELECT SUM(usd_pnl < 0) AS lost FROM v_round_trips WHERE closed = 1", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "fixed", "fixedColor": "red" } }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Win rate % (all-time · of record)",
+      "description": "Read next to daily P&L and the Monte Carlo expectation band (§15) — a 3R quadrant-trail strategy is designed to win < 50% profitably.",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 7 },
+      "targets": [ { "queryText": "SELECT 100.0 * AVG(usd_pnl >= 0) AS win_rate FROM v_round_trips WHERE closed = 1", "rawQueryText": "SELECT 100.0 * AVG(usd_pnl >= 0) AS win_rate FROM v_round_trips WHERE closed = 1", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 1, "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "Win rate % (today UTC · of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 7 },
+      "targets": [ { "queryText": "SELECT 100.0 * AVG(usd_pnl >= 0) AS win_rate FROM v_round_trips WHERE closed = 1 AND date(closed_ts) = date('now')", "rawQueryText": "SELECT 100.0 * AVG(usd_pnl >= 0) AS win_rate FROM v_round_trips WHERE closed = 1 AND date(closed_ts) = date('now')", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 1, "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }
+    },
+    {
+      "type": "stat", "title": "P&L $ (all-time · of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 7 },
+      "targets": [ { "queryText": "SELECT SUM(usd_pnl) AS pnl FROM v_round_trips WHERE closed = 1", "rawQueryText": "SELECT SUM(usd_pnl) AS pnl FROM v_round_trips WHERE closed = 1", "timeColumns": [], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "decimals": 2, "unit": "currencyUSD" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries", "title": "Daily win rate % (of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 12 },
+      "targets": [ { "queryText": "SELECT strftime('%s', date(closed_ts)) AS time, 100.0 * AVG(usd_pnl >= 0) AS win_rate, COUNT(*) AS trades FROM v_round_trips WHERE closed = 1 GROUP BY date(closed_ts) ORDER BY time", "rawQueryText": "SELECT strftime('%s', date(closed_ts)) AS time, 100.0 * AVG(usd_pnl >= 0) AS win_rate, COUNT(*) AS trades FROM v_round_trips WHERE closed = 1 GROUP BY date(closed_ts) ORDER BY time", "timeColumns": ["time"], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "drawStyle": "points", "pointSize": 8 } }, "overrides": [ { "matcher": { "id": "byName", "options": "trades" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "max", "value": null }, { "id": "custom.axisPlacement", "value": "right" } ] } ] }
+    },
+    {
+      "type": "timeseries", "title": "Daily P&L $ (of record)",
+      "datasource": { "type": "frser-sqlite-datasource", "uid": "sqlite-record" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 12 },
+      "targets": [ { "queryText": "SELECT strftime('%s', date(closed_ts)) AS time, SUM(usd_pnl) AS pnl FROM v_round_trips WHERE closed = 1 GROUP BY date(closed_ts) ORDER BY time", "rawQueryText": "SELECT strftime('%s', date(closed_ts)) AS time, SUM(usd_pnl) AS pnl FROM v_round_trips WHERE closed = 1 GROUP BY date(closed_ts) ORDER BY time", "timeColumns": ["time"], "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "custom": { "drawStyle": "bars", "fillOpacity": 60 } }, "overrides": [] }
+    }
+  ]
+}

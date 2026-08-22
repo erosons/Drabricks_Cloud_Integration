@@ -1,0 +1,18 @@
+# Two sources BY DESIGN (§15): Prometheus is the fast, disposable live
+# view (counters reset on every process restart); the SQLite fills record
+# is the of-record truth. When they disagree, SQLite wins.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus (live)
+    uid: prom-live
+    type: prometheus
+    access: proxy
+    url: http://localhost:9090
+    isDefault: true
+
+  - name: SQLite (of record)
+    uid: sqlite-record
+    type: frser-sqlite-datasource
+    jsonData:
+      path: /var/lib/grafana-sqlite/tradovate_bot.db

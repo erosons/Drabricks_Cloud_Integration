@@ -149,6 +149,7 @@ class FuturesOrderFlowStrategy:
         self.log = get_logger(f"engine.{product.symbol}")
         self._last_order_time = 0.0
         self._nack_pause_until = 0.0
+        self._round_trip_pnl_base = 0.0   # realized P&L when the trip opened
         self._flattened_this_session = False
         self._prev_tick_at: datetime | None = None
         self.skips: dict[str, int] = {}
@@ -233,18 +234,26 @@ class FuturesOrderFlowStrategy:
     async def on_fill(self, side: str, qty: int, price: float,
                       fee: float = 0.0) -> None:
         """Execution event from the broker (or the incubator's paper fills)."""
+        was_flat = self.positions.get_position(self.contract_symbol).qty == 0
         self.positions.on_fill(self.contract_symbol, side, qty, price, fee)
         pos = self.positions.get_position(self.contract_symbol)
         if pos.qty != 0 and not self.risk.has_position(self.contract_symbol):
             self.risk.on_entry(self.contract_symbol, pos.avg_price,
                                abs(pos.qty), "buy" if pos.qty > 0 else "sell")
             self.metrics.inc_orders_filled()
+            if was_flat:
+                self._round_trip_pnl_base = pos.realized_pnl
         elif pos.qty == 0:
             self.risk.on_exit(self.contract_symbol)
+            # round trip closed — win/loss by realized P&L delta, fees included
+            self.metrics.inc_trade_closed(
+                pos.realized_pnl - self._round_trip_pnl_base)
+            self._round_trip_pnl_base = pos.realized_pnl
 
     async def on_order_nack(self, error: str = "") -> None:
         self._last_order_time = time.monotonic()
         self._nack_pause_until = time.monotonic() + 60.0
+        self.metrics.inc_orders_rejected()
         self.log.warning("Order NACK (%s) — 60s pause", error or "unknown")
 
     # ------------------------------------------------------------------
