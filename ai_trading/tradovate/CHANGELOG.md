@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (research plane)
+
+- **Tick backtester** (`src/research/backtester.py`, §9) — replays Databento
+  TBBO history through the SAME engine/risk/session code as live, with the
+  pessimistic fill model: limit fills only on penetration (touches counted,
+  never filled), stops fill at the worse of stop/trade price minus slippage,
+  TP/flatten exits fill next tick with adverse slippage, commissions per
+  side. Sim time drives both engine clocks — new `clock_fn` injection point
+  in `FuturesOrderFlowStrategy` (live default unchanged: `time.monotonic`)
+  so the 10s cooldown / 60s NACK pause elapse in market time. News guard is
+  permissive (no historical calendar) and says so in `fill_flags`. Results
+  persist to `backtest_runs` + per-trade CSV. `scripts/backtest.py` CLI
+  **enforces the holdout**: runs reaching ≥ 2026-05-20 are refused without
+  `--holdout`. 16 tests (166 total). Verified on real data: 2025-09-03
+  MES day = 273,907 ticks in ~40s (≈7k ticks/s; full 9-month dev set ≈ 2h).
+
 ### Changed
 
 - **Market data source: Tradovate → Databento** (2026-08-21). Tradovate support

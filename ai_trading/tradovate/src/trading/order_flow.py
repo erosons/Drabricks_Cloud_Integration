@@ -129,7 +129,11 @@ class FuturesOrderFlowStrategy:
                  lifecycle_ok=lambda: True,
                  contract_fresh=lambda: True,
                  max_spread_ticks: float = 2.0,
-                 now_fn=lambda: datetime.now(timezone.utc)):
+                 now_fn=lambda: datetime.now(timezone.utc),
+                 clock_fn=time.monotonic):
+        # clock_fn feeds the order cooldown / NACK pause. Live: wall clock.
+        # Backtests inject sim-time seconds so the 10s cooldown and 60s
+        # pause elapse in MARKET time, not replay time (§9 one-code-path).
         self.product = product
         self.contract_symbol = contract_symbol
         self.analyzer = analyzer
@@ -143,6 +147,7 @@ class FuturesOrderFlowStrategy:
         self.contract_fresh = contract_fresh
         self.max_spread_ticks = max_spread_ticks
         self.now_fn = now_fn
+        self.clock_fn = clock_fn
 
         self.book: OrderBook | None = None
         self.metrics = BotMetrics(product.symbol)
@@ -197,7 +202,7 @@ class FuturesOrderFlowStrategy:
             return self._skip("F4_lifecycle")
 
         # ---- gate 0 pre-checks ----
-        wall = time.monotonic()
+        wall = self.clock_fn()
         if wall < self._nack_pause_until:
             return self._skip("G0_nack_pause")
         if wall - self._last_order_time < self.ORDER_COOLDOWN:
@@ -251,8 +256,8 @@ class FuturesOrderFlowStrategy:
             self._round_trip_pnl_base = pos.realized_pnl
 
     async def on_order_nack(self, error: str = "") -> None:
-        self._last_order_time = time.monotonic()
-        self._nack_pause_until = time.monotonic() + 60.0
+        self._last_order_time = self.clock_fn()
+        self._nack_pause_until = self.clock_fn() + 60.0
         self.metrics.inc_orders_rejected()
         self.log.warning("Order NACK (%s) — 60s pause", error or "unknown")
 
@@ -282,7 +287,7 @@ class FuturesOrderFlowStrategy:
             self.product.tick_size)
         qty = self.product.risk.max_contracts
 
-        self._last_order_time = time.monotonic()
+        self._last_order_time = self.clock_fn()
         sent = await self.executor.enter(self.contract_symbol, side, qty,
                                          limit_price, bracket_stop)
         if sent:
