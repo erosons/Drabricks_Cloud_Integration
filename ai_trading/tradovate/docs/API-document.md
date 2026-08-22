@@ -134,12 +134,38 @@ Frames are a single indicator char + optional JSON payload:
   intermediate updates — the DOM book must treat gaps as
   drop-and-resync, never assume continuity (§17, attestation #24–25).
 * **User data**: `user/syncrequest` on the trading socket streams order,
-  fill, and position events **⚠ still 401 after first scope grant — needs
-  its own permission category on the API key; event shapes unverified**.
+  fill, and position events — **✓ verified on demo 2026-08-18**
+  (`scripts/capture_user_sync.py`, ~850 frames across three captures).
+  `fill Created` carries `contractId`/`action`/`qty`/`price` at the top
+  level of `entity`, exactly as `UserSyncRouter` parses it; partial fills
+  arrive as multiple independent `fill Created` frames, one per partial
+  qty. Observed `ordStatus` lifecycle: `Unknown → PendingNew → Working →
+  Filled`, with `Canceled` on cancels, `Suspended` for resting bracket
+  legs, and `Rejected` on risk rejections (verified live via
+  `MaxOrderQtyLimitReached`) — the human-readable reason arrives
+  separately on a `commandReport` entity (`commandStatus:
+  "RiskRejected"`, `rejectReason`, `text`). UI brackets arrive as
+  `orderStrategy`/`orderStrategyLink` entities, and commands report
+  `RiskPassed`/`AtExecution`/`OnHold`/`ExecutionStopped`/`RiskRejected`.
+  Real frames are fixtures in `tests/test_live_executor.py`.
 * **Market data entitlement**: with a valid symbol (`contract/find`
   resolves it) `md/subscribe*` answering `Symbol is inaccessible` means the
   API key's Market Data scope or the account's market-data/API add-on
-  subscription is missing — not a symbol-format problem.
+  subscription is missing — not a symbol-format problem. **⚠ the refusal
+  still answers `s: 200`** — the error rides inside `d`:
+  `{"errorText": "Symbol is inaccessible", "errorCode": "UnknownSymbol",
+  "mode": "None"}` (verified on demo 2026-08-18,
+  `scripts/check_md_access.py`), so subscribe success must be judged on
+  `d` (no `errorText`, `mode != "None"`), never on `s` alone. As of that
+  soak: `mdAccessToken` is granted and the MD socket authorizes, but the
+  account-level add-on is still missing — the last demo blocker.
+  **RESOLVED as a licensing dead end (2026-08-19/21):** Tradovate support
+  confirmed API market data requires a CME ILA sub-vendor license (order
+  placement and user data are exempt). Live MD now streams from
+  **Databento GLBX.MDP3** instead (`src/market_data/databento_feed.py`,
+  Standard plan, trades + mbp-1, raw CME symbols, native aggressor side)
+  — verified live 2026-08-21 via `scripts/check_live_feed.py`. Tradovate
+  is orders + fills only; this socket is never opened.
 
 ## Design mapping
 
