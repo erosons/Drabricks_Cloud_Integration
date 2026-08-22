@@ -46,7 +46,7 @@ worth trading. The 23 playbook strategy modules in `config.yaml` are therefore
 14. [Diversification Controls](#14-diversification-controls)
 
 **Operations**
-15. [Monitoring: Infrastructure & Expectation](#15-monitoring-infrastructure--expectation)
+15. [Observability & Monitoring](#15-observability--monitoring)
 16. [Reconciliation & Fill-Integrity Audit](#16-reconciliation--fill-integrity-audit)
 17. [Tradovate API Constraints & Compliance](#17-tradovate-api-constraints--compliance)
 
@@ -102,24 +102,27 @@ worth trading. The 23 playbook strategy modules in `config.yaml` are therefore
 │   monitor    ─► live equity vs Monte Carlo expectation bands              │
 │                                                                           │
 │   ┌────────────── broker gateway — the ONE Tradovate session ─────────┐   │
-│   │  one auth token · one trading WS · one market-data WS · REST      │   │
+│   │  ORDERS + FILLS ONLY: one auth token · one trading WS · REST      │   │
+│   │  (market data does NOT pass through here — each product process   │   │
+│   │  opens its own Databento live session via DatabentoFeed)          │   │
 │   │  product processes attach via local RPC (Tradovate allows a       │   │
 │   │  single API connection per user — attestation #19)                │   │
 │   │  rate-limit budgeter: 429 backoff + time-penalty ticket replay    │   │
 │   │  stamps isAutomated: true on every order (attestation #7)         │   │
 │   └───────────────────────────────┬───────────────────────────────────┘   │
 └───────────────────────────────────┼───────────────────────────────────────┘
-                                    │                          │
-                                    ▼                          ▼
-┌─────────────────────────┐  ┌──────────────────────────────────────────┐
-│  Tradovate REST + WS    │  │  Reference sources (HTTP, daily)          │
-│  auth: accessTokenRequest│ │  cmegroup.com/markets/<slug>/volume       │
-│  orders: placeOrder,    │  │  forexfactory.com/calendar                │
-│    cancelOrder, liquidate│ └──────────────────────────────────────────┘
-│  md: wss://md.tradovate…│
-│  demo vs live URL picked │
-│  by mode switches        │
-└─────────────────────────┘
+                │                   │                          │
+                ▼                   ▼                          ▼
+┌───────────────────────────┐ ┌─────────────────────────┐ ┌──────────────────────┐
+│ Databento live MD         │ │ Tradovate REST + WS     │ │ Reference sources    │
+│ GLBX.MDP3 trades + mbp-1  │ │ (orders + fills only)   │ │ (HTTP, daily)        │
+│ raw CME symbols; one Live │ │ auth: accessTokenRequest│ │ cmegroup.com         │
+│ session per product proc  │ │ placeOrder, cancelOrder,│ │   /<slug>/volume     │
+│ (Standard plan = L1 only) │ │ liquidatePosition, OSO  │ │ forexfactory.com     │
+│ md.tradovateapi.com is    │ │ demo vs live URL picked │ │   /calendar          │
+│ DEAD for retail keys:     │ │ by mode switches        │ └──────────────────────┘
+│ CME ILA sub-vendor req'd  │ └─────────────────────────┘
+└───────────────────────────┘
 ```
 
 ### Key Design Decisions
@@ -138,9 +141,10 @@ worth trading. The 23 playbook strategy modules in `config.yaml` are therefore
 | **Sizing derived from Monte Carlo, capped by config** | Fixed-fractional `N = int(x · Equity / LargestLoss)` with `x` chosen from Monte Carlo sweeps subject to max-drawdown and risk-of-ruin ceilings — never from a single historical equity curve |
 | **Every live strategy has a pre-committed quitting point** | Decided *before* going live from the Monte Carlo drawdown distribution. Hitting it retires the strategy regardless of any narrative. Prevents "doubling down" on a broken system |
 | **Daily reconciliation is mandatory** | Davey's live-trading incident: an order that should have auto-cancelled rested overnight and filled into a rogue position, discovered 30+ hours late. The reconciler exists to find that class of failure within minutes, not days |
-| **Single-session broker gateway** | Tradovate permits **one API connection per user** (attestation #19 — even a Tradovate Trader login kills the bot's session). Product processes therefore never talk to the broker directly; one gateway process owns the token, both websockets, and the request budget |
+| **Single-session broker gateway** | Tradovate permits **one API connection per user** (attestation #19 — even a Tradovate Trader login kills the bot's session). Product processes therefore never talk to the broker directly; one gateway process owns the token, the trading websocket, and the request budget |
+| **Broker/data split: Tradovate executes, Databento feeds** | Tradovate API market data requires a CME ILA sub-vendor license (support-confirmed 2026-08-19) — a licensing wall, not a scope. Live MD streams from Databento GLBX.MDP3 (trades + mbp-1, raw CME symbols, native aggressor side) via `DatabentoFeed`; Tradovate handles orders + fills only. Bonus: broker and data source are independently replaceable, and DRY_RUN needs no broker credentials at all |
 | **Server-side OSO stop brackets** | Entries are submitted as OSO with the protective stop attached at the exchange. A crashed process still leaves a working stop; the local trailing engine *modifies* the resting stop instead of holding it in memory |
-| **Rate-limit budget is a first-class resource** | All REST/WS traffic draws from the gateway's budgeter (429 backoff, time-penalty ticket replay — attestations #21–26). Order actions have absolute priority; reconciler polling and MD subscriptions use what's left |
+| **Rate-limit budget is a first-class resource** | All Tradovate REST/WS traffic draws from the gateway's budgeter (429 backoff, time-penalty ticket replay — attestations #21–26). Order actions have absolute priority; reconciler polling uses what's left. Market data no longer competes for this budget at all — it rides the separate Databento session |
 
 ---
 
@@ -450,6 +454,15 @@ rules):
 months using the roll dates the resolver already records in `volume_oi_history` —
 backtests roll exactly when the live bot would have rolled.
 
+**Data source**: Databento historical batch pulls (`scripts/fetch_history.py`,
+`data/databento/`) using the volume-rolled continuous symbol (`MES.v.0`) — tick
+trades + BBO (TBBO) for one year per traded product, plus one month of MBP-10
+depth for the depth-10 vs depth-1 imbalance study. TBBO carries the true
+aggressor side per trade, so backtests and live feed the engine identically.
+Within the subscription's rolling 1-year window re-pulls are $0; vintages that
+matter long-term (the dev/holdout year) are preserved on disk before they age
+out of the window.
+
 ---
 
 ## 10. Walk-Forward Analysis
@@ -674,27 +687,83 @@ Consequences in config/runtime:
 
 ---
 
-## 15. Monitoring: Infrastructure & Expectation
+## 15. Observability & Monitoring
 
-### Infrastructure metrics
+Three layers, from fastest to most authoritative:
 
-Same Prometheus + Grafana stack as the kraken bot (ports 8100+N per product),
-plus futures-specific series:
+1. **Prometheus** — in-process counters/gauges per product, scraped every 5 s.
+   Fast, disposable: counters reset to zero on every process restart.
+2. **SQLite** — the of-record trail (`fills` → `v_round_trips`, plus
+   `equity_snapshots`). Permanent; wins any disagreement with layer 1.
+3. **Logs** — one rotating structured log per product (`logs/`, `[SYMBOL]`
+   prefix), plus the soak captures the `scripts/` tools write.
+
+### Running the stack
+
+```bash
+cd monitoring && docker compose up -d     # Prometheus + Grafana
+# Grafana: http://localhost:3000 (admin/admin on first login)
+# dashboard "Tradovate Bot — Trade Success" is pre-provisioned
+```
+
+`docker-compose.yml` installs the `frser-sqlite-datasource` plugin and mounts
+`data/tradovate_bot.db` **read-only** — Grafana can never write the record.
+Product N (launcher order) exports metrics on port `8100+N`; `prometheus.yml`
+lists the scrape targets. Everything is **internal-only**: market-data-derived
+metrics must never be exposed outside the deployment (§17 attestation #31).
+
+### Exported metrics (implemented — `src/utils/metrics.py`)
 
 | Metric | Type | Meaning |
 |--------|------|---------|
-| `bot_active_contract_info` | Gauge (labels) | current contract code per product |
-| `bot_session_state` | Gauge | 0=CLOSED, 1=OPEN, 2=FLATTENING |
-| `bot_news_blackout` | Gauge | 1 while inside a blackout window |
-| `bot_next_news_seconds` | Gauge | seconds until next red-folder event |
-| `bot_roll_pending` | Gauge | 1 when resolver flagged a roll |
-| `bot_daily_realized_pnl_usd` | Gauge | resets at session open |
-| `bot_orphan_orders_total` | Counter | orders at broker the bot didn't know about (§16) |
-| `bot_position_mismatch` | Gauge | 1 while broker vs internal position disagree |
-| `bot_slippage_ticks_actual` | Histogram | live slippage vs model |
-| `bot_reconciliation_ok` | Gauge | per product; session won't open while 0 |
+| `bot_mid_price`, `bot_fast_ema`, `bot_slow_ema` | Gauge | live price state per product |
+| `bot_realized_pnl_usd`, `bot_unrealized_pnl_usd` | Gauge | P&L from the position tracker |
+| `bot_position_qty`, `bot_stop_price`, `bot_target_price` | Gauge | current position + bracket |
+| `bot_signal` | Gauge | −1 sell / 0 neutral / +1 buy |
+| `bot_orders_placed_total`, `bot_orders_filled_total` | Counter | order lifecycle |
+| `bot_orders_rejected_total` | Counter | order NACKs (broker rejections) |
+| `bot_sl_hits_total`, `bot_tp_hits_total` | Counter | which bracket leg fired |
+| `bot_trades_won_total`, `bot_trades_lost_total` | Counter | round trips by realized P&L sign **net of fees** — *not* `sl_hits`/`tp_hits`: a quadrant-trailed stop above break-even exits as an sl_hit but counts as a win |
+
+If `prometheus_client` is not installed the whole layer degrades to a silent
+no-op — the engine never depends on monitoring.
+
+### Planned metrics (design — not yet exported)
+
+Wired in as their subsystems land (reconciler §16, resolver/session/news
+daemon integration): `bot_active_contract_info`, `bot_session_state`,
+`bot_news_blackout`, `bot_next_news_seconds`, `bot_roll_pending`,
+`bot_daily_realized_pnl_usd`, `bot_orphan_orders_total`,
+`bot_position_mismatch`, `bot_slippage_ticks_actual`,
+`bot_reconciliation_ok` (per product; session won't open while 0).
+
+### Trade-success dashboard: two sources, one authority
+
+The success dashboard (`monitoring/grafana/dashboards/tradovate-success.json`,
+provisioned by `monitoring/docker-compose.yml`) is split into two labeled
+sections with a strict rule about which one to believe:
+
+| | **LIVE — Prometheus** | **OF RECORD — SQLite** |
+|---|---|---|
+| Feeds | in-process counters, 5s scrape | `fills` table via the `v_round_trips` view |
+| Survives restart | no — counters reset to zero | yes — permanent |
+| Panels | placed / filled / rejected today, live win rate, live P&L | won / lost totals, win rate today and over time, daily P&L |
+| Authority | speedometer only | **the truth — wins any disagreement** |
+
+`v_round_trips` (schema, `db.py`) reconstructs round trips from the fills
+record: a trip opens on the first fill from flat and closes when bought ==
+sold; win = `usd_pnl >= 0` net of fees. Every broker fill is written to
+`fills` by `main.py`'s fill handler, so the of-record view is complete even
+across crashes and restarts — the same working-view vs durable-record
+philosophy as the reconciler (§16). Win rate is always displayed next to
+dollars and the expectation band below: a 3R quadrant-trail strategy is
+*designed* to win under 50% profitably, and must not be read as broken for
+doing so.
 
 ### Statistical monitoring — is the live strategy still the one we validated?
+
+*(design — lands with the research plane, §9–§12; needs the
+`live_vs_expected` table the backtest/incubation harness will write)*
 
 **The two standing charts** (Grafana, fed from `live_vs_expected`):
 
@@ -764,11 +833,22 @@ the design, and how the architecture answers each:
 | 19 | **One API connection per user** — a Tradovate Trader login ends the API session (and vice versa) | Single-session **broker gateway** owns the token and both websockets; product processes attach via local RPC. Ops rule: never log into Tradovate Trader with the bot's account while the bot runs |
 | 20 | Auto-liquidation below the greater of $500 / 3% of initial margin; accounts not margined by 4:45 PM ET liquidated | Margin monitor blocks entries that don't fit free cash + buffer; 15:55 ET flatten keeps the account flat well before the deadline (§13) |
 | 21–23 | Per-second/minute/hour rate caps → `429`; time-penalty tickets must be stored and re-submitted after the prescribed wait; caps may change without notice | Gateway budgeter: token-bucket per scope with ≥20% headroom, exponential backoff on 429, penalty-ticket persistence and replay |
-| 24–25 | MD subscriptions throttled under load; responses may be coalesced across symbols or drop stale updates | `websocket.py` parses combined multi-symbol frames; the DOM book treats gaps as drop-and-resync events, never assumes frame continuity |
+| 24–25 | MD subscriptions throttled under load; responses may be coalesced across symbols or drop stale updates | Shaped the book's drop-and-resync design, which carries over unchanged to the Databento feed: any session gap desyncs the book until the next snapshot. (Tradovate MD itself is no longer consumed — see the note below this table) |
 | 4 | Wash-trade prohibition (Rule 534) | Wash guard in `execution_guards`: no simultaneous opposite-side working orders in the same root or its micro/mini twin (MES↔ES, MNQ↔NQ, MCL↔QM, …) across all product processes |
 | 9 | Back-month trading may require a risk change request | The resolver trades the front (active) month only; back months are never subscribed (§4) |
-| 31 | Market data may not be redistributed, directly or in derived works | Grafana/Prometheus stay internal to the deployment; no MD-derived feeds are exposed externally |
+| 31 | Market data may not be redistributed, directly or in derived works | Grafana/Prometheus stay internal to the deployment; no MD-derived feeds are exposed externally. The same restriction applies to the Databento license (personal, self-trading use) |
 | 32 | Every live account has an unlimited simulation account | Demo soak (roadmap ph. 8) and incubation fill-validation legs run on the sim environment (§12) |
+
+> **Market data is NOT Tradovate's** (resolved 2026-08-19/21): Tradovate
+> support confirmed that pulling real-time or historical market data via
+> their API requires becoming a **CME sub-vendor under the Information
+> License Agreement** — institutional-scale licensing, explicitly *not*
+> required for order placement or user/account data. `md/subscribe*` is
+> therefore never called; live MD streams from **Databento GLBX.MDP3**
+> (Standard plan) through `src/market_data/databento_feed.py`, and
+> historical data for research comes from Databento batch pulls
+> (`scripts/fetch_history.py`). Full wire-level detail:
+> `docs/API-document.md`.
 
 The remaining attestation items (fees, community resources, third-party library
 risk, etc.) are operational knowledge rather than architecture, but the
@@ -786,9 +866,10 @@ src/
 │                              demo/live endpoint selection from mode switches
 ├── client/
 │   ├── gateway.py ─────────── THE single Tradovate session (§17, attest. #19):
-│   │                          owns token + trading/MD websockets, serves all
-│   │                          product processes over local RPC; rate-limit
-│   │                          budgeter (429 backoff, penalty-ticket replay)
+│   │                          owns token + trading websocket (orders + fills
+│   │                          only), serves all product processes over local
+│   │                          RPC; rate-limit budgeter (429 backoff,
+│   │                          penalty-ticket replay)
 │   ├── rest.py ────────────── Async REST: accounts, placeOrder, cancelOrder,
 │   │                          liquidatePosition, cancelAllOrders (via gateway)
 │   └── websocket.py ───────── Auto-reconnect WS (Tradovate frame protocol:
@@ -804,8 +885,14 @@ src/
 │   ├── session_manager.py ─── open/close/flatten state machine (§6)
 │   └── news_guard.py ──────── blackout window evaluation on every tick (§5)
 ├── market_data/
-│   ├── orderbook.py ───────── DOM (depth-of-market) book, tick-indexed
-│   └── ticker.py ──────────── quote/settlement snapshot
+│   ├── databento_feed.py ──── THE live feed: Databento GLBX.MDP3 trades +
+│   │                          mbp-1 (raw CME symbols) → book/trade callbacks;
+│   │                          native aggressor side; reconnecting sessions
+│   │                          with drop-and-resync (replaced Tradovate MD)
+│   ├── orderbook.py ───────── tick-indexed book (top-of-book live; full DOM
+│   │                          in backtests fed from MBP-10 history)
+│   └── stream.py ──────────── MdRouter for Tradovate MD frames — unused by
+│                              main.py since the Databento switch; reference
 ├── trading/
 │   ├── signals.py ─────────── Signal enum: BUY / SELL / NEUTRAL   (ported)
 │   ├── orders.py ──────────── Order model + Tradovate OrderManager (OSO
@@ -861,10 +948,20 @@ tradovate/
 │
 ├── src/                       # (see Component Map, §18)
 │
-├── data/
-│   └── tradovate_bot.db       # SQLite (auto-created)
+├── scripts/                   # soak & data tools (all read-only vs the account):
+│   ├── fetch_history.py       #   Databento batch pulls — refuses non-$0 quotes
+│   ├── check_live_feed.py     #   live-feed probe through DatabentoFeed
+│   ├── capture_user_sync.py   #   trading-socket frame capture (soak round 3)
+│   └── check_md_access.py     #   legacy Tradovate MD probe (historical record)
 │
-├── monitoring/                # prometheus.yml + grafana dashboards
+├── data/
+│   ├── tradovate_bot.db       # SQLite (auto-created)
+│   └── databento/             # git-ignored history pulls: per product,
+│                              # 1 yr TBBO (backtests) + 1 mo MBP-10 (depth study)
+│
+├── monitoring/                # docker-compose (Prometheus + Grafana w/ SQLite
+│                              # plugin), provisioned datasources + success
+│                              # dashboard (§15)
 └── logs/                      # one rotating log per product
 ```
 
@@ -976,7 +1073,8 @@ in the plain-English README. Summary:
 | Block | Key settings |
 |-------|--------------|
 | `mode` | `dry_run`, `live_trading` — the two account-level switches (§2) |
-| `tradovate` | demo/live REST + WS URLs; credentials via env vars only |
+| `tradovate` | demo/live REST + trading-WS URLs (orders + fills only); credentials via env vars only |
+| `databento` | live market-data source: `dataset: GLBX.MDP3`; `DATABENTO_API_KEY` via env — needs an active CME Standard subscription (L1: trades + mbp-1) |
 | `session` | `open: 08:00`, `close: 16:00` ET, `flatten_buffer_minutes: 5`, Sun–Fri |
 | `news_guard` | USD + high impact, 15 min before/after, daily 18:00 ET refresh, `position_policy` |
 | `contract_resolver` | daily 18:30 ET, `max_volume_and_oi` rule, 48 h staleness guard |
