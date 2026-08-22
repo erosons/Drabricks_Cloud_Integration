@@ -111,6 +111,36 @@ CREATE TABLE IF NOT EXISTS backtest_runs (
   largest_loss REAL, fill_flags_json TEXT, created_at TEXT
 );
 
+-- One row per card-strategy backtest run: the G2 evidence table the
+-- factory ranks candidates by (§8-§9). backtest_runs stays the summary
+-- ledger; this table carries the full stat block + reproducibility info.
+CREATE TABLE IF NOT EXISTS research_results (
+  id INTEGER PRIMARY KEY,
+  run_id INTEGER REFERENCES backtest_runs(id),
+  strategy TEXT NOT NULL, product TEXT NOT NULL,
+  phase TEXT NOT NULL,               -- e.g. 'L1-bars' | 'L2-depth10'
+  timeframe_min INTEGER,
+  date_from TEXT, date_to TEXT,
+  trades INTEGER, wins INTEGER, losses INTEGER, win_rate REAL,
+  net_profit REAL, fees REAL, profit_factor REAL,
+  max_drawdown REAL, largest_loss REAL,
+  flags_json TEXT, notes TEXT, created_at TEXT
+);
+
+DROP VIEW IF EXISTS v_research_summary;
+CREATE VIEW v_research_summary AS
+SELECT strategy, product, phase, timeframe_min, trades, wins, losses,
+       ROUND(win_rate * 100, 1)  AS win_rate_pct,
+       ROUND(net_profit, 2)      AS net_profit,
+       ROUND(profit_factor, 2)   AS profit_factor,
+       ROUND(max_drawdown, 2)    AS max_drawdown,
+       date_from, date_to, created_at
+FROM research_results r
+WHERE id = (SELECT MAX(id) FROM research_results
+            WHERE strategy = r.strategy AND product = r.product
+              AND phase = r.phase)
+ORDER BY net_profit DESC;
+
 CREATE TABLE IF NOT EXISTS walkforward_folds (
   run_id INTEGER, fold INTEGER, in_from TEXT, in_to TEXT, out_from TEXT, out_to TEXT,
   params_json TEXT, out_net_profit REAL,
