@@ -58,6 +58,18 @@ class Tick(NamedTuple):
     ask_sz: int
 
 
+class DepthTick(NamedTuple):
+    """Trade event carrying the FULL book snapshot at trade time (from
+    MBP-10 records, whose levels array is the complete visible book) —
+    the phase-2 depth study's input."""
+    ts_ns: int
+    price: float
+    size: float
+    side: str
+    bids: tuple         # ((price, size), ...) best-first, up to 10
+    asks: tuple
+
+
 @dataclass
 class SimTrade:
     side: str
@@ -273,9 +285,10 @@ class Backtester:
 
     def __init__(self, config: AppConfig, product_symbol: str,
                  slippage_ticks: int = 2, commission_per_side: float = 1.10,
-                 news_guard=None):
+                 news_guard=None, param_overrides: dict | None = None):
         product = config.products[product_symbol]
-        params = config.strategies["order_flow_scalp"].params
+        params = {**config.strategies["order_flow_scalp"].params,
+                  **(param_overrides or {})}
         self._now = datetime.now(timezone.utc)
 
         positions = PositionTracker(product.tick_size, product.tick_value)
@@ -332,9 +345,14 @@ class Backtester:
                 first_iso = now.isoformat()
             last_price = tick.price
             await executor.on_tick(tick, now)
-            book.apply_dom({
-                "bids": [{"price": tick.bid, "size": tick.bid_sz}],
-                "asks": [{"price": tick.ask, "size": tick.ask_sz}]})
+            if isinstance(tick, DepthTick):
+                book.apply_dom({
+                    "bids": [{"price": p, "size": s} for p, s in tick.bids],
+                    "asks": [{"price": p, "size": s} for p, s in tick.asks]})
+            else:
+                book.apply_dom({
+                    "bids": [{"price": tick.bid, "size": tick.bid_sz}],
+                    "asks": [{"price": tick.ask, "size": tick.ask_sz}]})
             await engine.on_book_update()
             await engine.on_trade(tick.price, tick.size, tick.side)
             n += 1
@@ -353,6 +371,47 @@ class Backtester:
             date_from=first_iso[:10], date_to=self._now.isoformat()[:10],
             ticks=n, trades=executor.trades, skips=dict(engine.skips),
             fill_flags=flags, params=self.params)
+
+
+def load_mbp10_trades(data_dir: str | Path,
+                      chunk_rows: int = 1_000_000) -> Iterator[DepthTick]:
+    """Stream DepthTicks from a batch dir of *.mbp-10.dbn.zst files: only
+    TRADE records (action 'T'), each carrying the full 10-level book at
+    trade time. The book between trades is not replayed — both arms of
+    the depth A/B see identical decision points, which is the study."""
+    import databento as dbn_client
+
+    files = sorted(Path(data_dir).glob("*.mbp-10.dbn.zst"))
+    if not files:
+        raise FileNotFoundError(f"no *.mbp-10.dbn.zst under {data_dir}")
+    bid_px = [f"bid_px_{k:02d}" for k in range(10)]
+    bid_sz = [f"bid_sz_{k:02d}" for k in range(10)]
+    ask_px = [f"ask_px_{k:02d}" for k in range(10)]
+    ask_sz = [f"ask_sz_{k:02d}" for k in range(10)]
+    for f in files:
+        log.info("loading %s", f.name)
+        store = dbn_client.DBNStore.from_file(f)
+        for df in store.to_df(count=chunk_rows):
+            df = df.reset_index()
+            df = df[(df["action"] == "T") & (df["side"] != "N")]
+            if df.empty:
+                continue
+            ts = df["ts_recv"].astype("int64").to_numpy()
+            price = df["price"].to_numpy()
+            size = df["size"].to_numpy()
+            side = df["side"].to_numpy()
+            bp = df[bid_px].to_numpy()
+            bs = df[bid_sz].to_numpy()
+            ap = df[ask_px].to_numpy()
+            asz = df[ask_sz].to_numpy()
+            for j in range(len(df)):
+                bids = tuple((float(bp[j, k]), int(bs[j, k]))
+                             for k in range(10) if bs[j, k] > 0)
+                asks = tuple((float(ap[j, k]), int(asz[j, k]))
+                             for k in range(10) if asz[j, k] > 0)
+                yield DepthTick(int(ts[j]), float(price[j]), float(size[j]),
+                                "buy" if side[j] == "B" else "sell",
+                                bids, asks)
 
 
 def load_tbbo_dir(data_dir: str | Path, date_from: str | None = None,
