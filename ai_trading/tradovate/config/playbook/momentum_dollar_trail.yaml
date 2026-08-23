@@ -1,0 +1,55 @@
+module: momentum_dollar_trail
+skills: [user-specified]         # designed by the operator, 2026-08-23
+archetype: momentum-entry + fixed-dollar trail
+tier: scalp
+priority: 1
+status_requested: limited_test
+
+goal:
+  edge_hypothesis: >
+    Operator hypothesis: once price starts moving directionally, stay with
+    the move as long as it never retraces more than $1.00 of price; cap any
+    loss at ~$5/contract (on MES, $1.00 of price IS $5 — 4 ticks × $1.25).
+    Entries at market on detected movement, exits only by the trail.
+  markets: [MES, MNQ]
+  timeframe: 1m                  # a $1 trail is sub-noise on any larger bar
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: very high — trail sits inside 1m bar noise
+
+mechanics:
+  movement: two consecutive 1m closes in the same direction with cumulative
+    move >= move_trigger_ticks (2) — the minimal mechanical reading of
+    "there is a movement in a direction"; mirror for shorts
+  entry: market on the next bar open after movement is detected
+  stop: "v2 (operator, 2026-08-23): initial stop = the TIGHTER of
+    trail_dollars (10.00, price) and max_loss_usd (30.00, P&L dollars)
+    converted to price — on MES $30 = 6 pts so the hard cap binds first;
+    the trail takes over once the trade is ~4 pts in profit"
+  trail: stop ratchets to (extreme since entry − trail_dollars of price);
+    never loosens
+  targets: none — ride until the trail is hit
+  exit: trailing stop, or 15:55 ET session flatten
+  re_entry: allowed as soon as movement re-appears (always-in by design)
+  regime_gate: none (operator design)
+  shared_services: [execution_guards]
+  history: "v1 (trail $1 price / $5 cap) closed 2026-08-23: −$218.6k MES /
+    −$168.8k MNQ over 67k trades — trail inside 1m noise, friction-dominated
+    (runs 555-556)"
+
+prerequisites: []
+
+risks_and_guards:
+  - A $1.00 trail is INSIDE typical 1m bar range on MES (and far inside on
+    MNQ, where $1 of price is only $2 of P&L); expect near-every trade to
+    stop on noise, paying ~$4.70 of round-trip cost + slippage against a
+    $5 risk. This is the cost-to-edge failure mode that closed all prior
+    scalp cards — tested anyway so the verdict is empirical, not asserted.
+  - Very high trade count draws hard on commissions; results reported net.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "'Movement' quantified as 2 consecutive same-direction closes summing
+     >= 2 ticks (minimal mechanical definition, locked before testing)."
+  - "'$1' read as PRICE dollars (=$5 P&L on MES); MNQ uses the same $1
+     price trail as specified, noting it is only $2 of P&L there."

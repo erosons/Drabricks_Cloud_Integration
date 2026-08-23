@@ -119,6 +119,50 @@ class OpeningRange(CardStrategy):
         return None
 
 
+class MomentumDollarTrail(CardStrategy):
+    name = "momentum_dollar_trail"
+    timeframe_min = 1
+    notes = ("operator-specified: movement = 2 consecutive same-direction "
+             "1m closes ≥ move_trigger_ticks; market entry; stop = entry ∓ "
+             "trail_dollars of price ratcheting on the extreme since entry; "
+             "no target; re-entry whenever movement reappears")
+
+    def prepare(self, df):
+        self._cols(df, close_chg=df["close"].diff())
+        self._extreme = None
+        # initial risk = the tighter of the trail and the hard dollar cap,
+        # converted to price distance for this product
+        usd_per_point = self.product.tick_value / self.product.tick_size
+        self.init_dist = min(self.p["trail_dollars"],
+                             self.p["max_loss_usd"] / usd_per_point)
+        return df
+
+    def on_bar(self, df, i):
+        a = self.a
+        if i < 2:
+            return None
+        c1, c2 = a["close_chg"][i - 1], a["close_chg"][i]
+        trigger = self.p["move_trigger_ticks"] * self.tick
+        self._extreme = None
+        if c1 > 0 and c2 > 0 and (c1 + c2) >= trigger:
+            return Entry("buy", "market", None,
+                         stop=a["close"][i] - self.init_dist)
+        if c1 < 0 and c2 < 0 and -(c1 + c2) >= trigger:
+            return Entry("sell", "market", None,
+                         stop=a["close"][i] + self.init_dist)
+        return None
+
+    def manage(self, df, i, pos):
+        a = self.a
+        trail = self.p["trail_dollars"]
+        if pos.side == "buy":
+            self._extreme = max(self._extreme or pos.entry_price,
+                                a["high"][i])
+            return self._extreme - trail
+        self._extreme = min(self._extreme or pos.entry_price, a["low"][i])
+        return self._extreme + trail
+
+
 # ---------------------------------------------------------------- priority 1
 
 class VwapRsiPullback(CardStrategy):
@@ -956,7 +1000,7 @@ class PivotLevels(CardStrategy):
 
 ALL_STRATEGIES: dict[str, type[CardStrategy]] = {
     cls.name: cls for cls in (
-        OpeningRange,
+        OpeningRange, MomentumDollarTrail,
         VwapRsiPullback, BbSqueezeBreakout, CprDayRouter, SupertrendRsi,
         EmaSnapbackScalp, EmaSrBreak, TwoLeggedPullback, VolumeBreakout,
         MicroFlagScalp, VwapBandFade, DonchianPullback, FractalTrend,
