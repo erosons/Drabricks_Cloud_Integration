@@ -42,8 +42,8 @@ class TestMomentumDollarTrail:
         assert res.flags["entries"] == 1
         assert res.trades == [] or res.trades[0].side == "buy"
 
-    def test_loss_capped_at_thirty_dollars(self):
-        # v2: initial stop = min(trail $10, $30/$5-per-pt = 6 pts) = 6 pts
+    def test_loss_capped_at_twenty_dollars(self):
+        # v3: initial stop = min(trail $10, $20/$5-per-pt = 4 pts) = 4 pts
         rows = [(6400, 6400.5, 6399.5, 6400),
                 (6400, 6400.5, 6399.5, 6400.25),
                 (6400.25, 6400.75, 6400, 6400.5),
@@ -52,11 +52,11 @@ class TestMomentumDollarTrail:
         res = _run(rows)
         t = res.trades[0]
         assert t.exit_reason == "stop"
-        # stop anchors at the SIGNAL close (6400.5) − 6 pts = 6394.5;
-        # exit = stop − 2 ticks slip = 6394.0
-        assert abs(t.exit_price - 6394.0) < 1e-9
-        # ≈ $30 intended risk + $2.50 entry slip + $2.50 stop slip + $2.20 fees
-        assert -38.0 < t.pnl_usd < -35.0
+        # stop anchors at the SIGNAL close (6400.5) − 4 pts = 6396.5;
+        # exit = stop − 2 ticks slip = 6396.0
+        assert abs(t.exit_price - 6396.0) < 1e-9
+        # ≈ $20 intended risk + $2.50 entry slip + $2.50 stop slip + $2.20 fees
+        assert -28.0 < t.pnl_usd < -25.0
 
     def test_trail_takes_over_after_four_points(self):
         # entry ~6401; run to 6420 → trail = 6410 > initial 6395; dip hits it
