@@ -42,41 +42,41 @@ class TestMomentumDollarTrail:
         assert res.flags["entries"] == 1
         assert res.trades == [] or res.trades[0].side == "buy"
 
-    def test_loss_capped_at_forty_dollars(self):
-        # v4: initial stop = min(trail $10, $40/$5-per-pt = 8 pts) = 8 pts
+    def test_loss_capped_at_hundred_dollars(self):
+        # frozen config: min(trail $20, $100/$5-per-pt = 20 pts) = 20 pts
         rows = [(6400, 6400.5, 6399.5, 6400),
                 (6400, 6400.5, 6399.5, 6400.25),
                 (6400.25, 6400.75, 6400, 6400.5),
                 (6400.5, 6400.75, 6400.25, 6400.5),   # entry bar (market)
-                (6400.5, 6400.5, 6392.0, 6393.0)]     # crash through stop
+                (6400.5, 6400.5, 6378.0, 6379.0)]     # crash through stop
         res = _run(rows)
         t = res.trades[0]
         assert t.exit_reason == "stop"
-        # stop anchors at the SIGNAL close (6400.5) − 8 pts = 6392.5;
-        # exit = stop − 2 ticks slip = 6392.0
-        assert abs(t.exit_price - 6392.0) < 1e-9
-        # ≈ $40 intended risk + $2.50 entry slip + $2.50 stop slip + $2.20 fees
-        assert -49.0 < t.pnl_usd < -45.0
+        # signal-close stop 6380.5 is ratcheted to fill−20 = 6381 by the
+        # first manage() call; exit = 6381 − 2 ticks slip = 6380.5
+        assert abs(t.exit_price - 6380.5) < 1e-9
+        # ≈ $100 intended risk + slippage both ways + fees
+        assert -108.0 < t.pnl_usd < -102.0
 
-    def test_trail_takes_over_after_four_points(self):
-        # entry ~6401; run to 6420 → trail = 6410 > initial 6395; dip hits it
+    def test_pure_trail_ratchets_from_extreme(self):
+        # entry ~6401; run to 6440 → trail = 6420; dip $21 hits it
         rows = [(6400, 6400.5, 6399.5, 6400),
                 (6400, 6400.5, 6399.5, 6400.25),
                 (6400.25, 6400.75, 6400, 6400.5),
                 (6400.5, 6401, 6400.25, 6401),        # entry bar
-                (6401, 6420, 6400.75, 6419),          # run — trail to 6410
-                (6419, 6419, 6408.0, 6409.0)]         # dip $11 → stop 6410
+                (6401, 6440, 6400.75, 6439),          # run — trail to 6420
+                (6439, 6439, 6418.0, 6419.0)]         # dip $21 → stop 6420
         res = _run(rows)
         t = res.trades[0]
         assert t.exit_reason == "stop"
         assert t.pnl_usd > 0                          # trailed into profit
-        assert abs(t.exit_price - (6420 - 10.00 - 0.50)) < 1e-9
+        assert abs(t.exit_price - (6440 - 20.00 - 0.50)) < 1e-9
 
     def test_reenters_after_stop_when_movement_persists(self):
         up = [(6400 + 0.5 * k, 6400.75 + 0.5 * k, 6399.75 + 0.5 * k,
                6400.5 + 0.5 * k) for k in range(4)]
-        crash = [(6402.5, 6402.5, 6390.0, 6391.0)]    # through the 8-pt stop
-        up2 = [(6391 + 0.5 * k, 6391.75 + 0.5 * k, 6390.75 + 0.5 * k,
-                6391.5 + 0.5 * k) for k in range(5)]
+        crash = [(6402.5, 6402.5, 6376.0, 6377.0)]    # through the 20-pt stop
+        up2 = [(6377 + 0.5 * k, 6377.75 + 0.5 * k, 6376.75 + 0.5 * k,
+                6377.5 + 0.5 * k) for k in range(5)]
         res = _run(up + crash + up2)
         assert res.flags["entries"] >= 2

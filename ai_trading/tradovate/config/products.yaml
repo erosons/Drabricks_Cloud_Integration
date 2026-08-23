@@ -53,10 +53,12 @@ products:
     risk:
       max_contracts: 1
       risk_per_trade_pct: 0.5
-      stop_loss_usd: 50.0
+      stop_loss_usd: 100.0             # DEMO (2026-08-23): raised 50→100 for
+                                       # momentum_dollar_trail's 20-pt stop;
+                                       # REVERT before any live_trading: true
       risk_reward_ratio: 3.0
       trail_step_pct: 0.25
-      daily_loss_limit_usd: 150.0
+      daily_loss_limit_usd: 300.0      # DEMO: worst observed day -$336; was 150
     trade: true
 
   ES:
