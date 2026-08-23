@@ -42,8 +42,8 @@ class TestMomentumDollarTrail:
         assert res.flags["entries"] == 1
         assert res.trades == [] or res.trades[0].side == "buy"
 
-    def test_loss_capped_at_twenty_dollars(self):
-        # v3: initial stop = min(trail $10, $20/$5-per-pt = 4 pts) = 4 pts
+    def test_loss_capped_at_forty_dollars(self):
+        # v4: initial stop = min(trail $10, $40/$5-per-pt = 8 pts) = 8 pts
         rows = [(6400, 6400.5, 6399.5, 6400),
                 (6400, 6400.5, 6399.5, 6400.25),
                 (6400.25, 6400.75, 6400, 6400.5),
@@ -52,11 +52,11 @@ class TestMomentumDollarTrail:
         res = _run(rows)
         t = res.trades[0]
         assert t.exit_reason == "stop"
-        # stop anchors at the SIGNAL close (6400.5) − 4 pts = 6396.5;
-        # exit = stop − 2 ticks slip = 6396.0
-        assert abs(t.exit_price - 6396.0) < 1e-9
-        # ≈ $20 intended risk + $2.50 entry slip + $2.50 stop slip + $2.20 fees
-        assert -28.0 < t.pnl_usd < -25.0
+        # stop anchors at the SIGNAL close (6400.5) − 8 pts = 6392.5;
+        # exit = stop − 2 ticks slip = 6392.0
+        assert abs(t.exit_price - 6392.0) < 1e-9
+        # ≈ $40 intended risk + $2.50 entry slip + $2.50 stop slip + $2.20 fees
+        assert -49.0 < t.pnl_usd < -45.0
 
     def test_trail_takes_over_after_four_points(self):
         # entry ~6401; run to 6420 → trail = 6410 > initial 6395; dip hits it
@@ -75,8 +75,8 @@ class TestMomentumDollarTrail:
     def test_reenters_after_stop_when_movement_persists(self):
         up = [(6400 + 0.5 * k, 6400.75 + 0.5 * k, 6399.75 + 0.5 * k,
                6400.5 + 0.5 * k) for k in range(4)]
-        crash = [(6402.5, 6402.5, 6394.0, 6395.0)]    # through the 6-pt stop
-        up2 = [(6395 + 0.5 * k, 6395.75 + 0.5 * k, 6394.75 + 0.5 * k,
-                6395.5 + 0.5 * k) for k in range(5)]
+        crash = [(6402.5, 6402.5, 6390.0, 6391.0)]    # through the 8-pt stop
+        up2 = [(6391 + 0.5 * k, 6391.75 + 0.5 * k, 6390.75 + 0.5 * k,
+                6391.5 + 0.5 * k) for k in range(5)]
         res = _run(up + crash + up2)
         assert res.flags["entries"] >= 2

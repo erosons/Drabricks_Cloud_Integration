@@ -265,7 +265,7 @@ strategies:
     params:
       move_trigger_ticks: 2        # 2 consecutive same-direction closes ≥ this
       trail_dollars: 10.00         # PRICE dollars trailed from the extreme
-      max_loss_usd: 20.00          # hard initial stop in P&L dollars/contract
+      max_loss_usd: 40.00          # hard initial stop in P&L dollars/contract
 
   # --- Priority 1: build first ---------------------------------------------
   pivot_levels:
