@@ -53,6 +53,72 @@ class CardStrategy:
         return None
 
 
+# -------------------------------------------------- data-derived (2026-08)
+
+class OpeningRange(CardStrategy):
+    name = "opening_range"
+    timeframe_min = 5
+    notes = ("range = first or_window_minutes of RTH; entry = first 5m "
+             "close beyond boundary ± buffer, market next bar; no entry "
+             "before 08:45 ET (news rule, declared on card); one-and-done "
+             "per session; quality filter 1.0-6.0 × ATR; in-sample-origin "
+             "honesty clause on card — holdout is the verdict")
+
+    def prepare(self, df):
+        window = int(self.p["or_window_minutes"])
+        self.entry_earliest = max(window, 45)          # card news rule
+        self.cutoff = int(self.p["entry_cutoff_min"])
+        in_window = df["minutes_since_open"].between(0, window - 1) \
+            & df["in_session"]
+        grp = df["session_date"]
+        or_hi = df["high"].where(in_window).groupby(grp).transform("max")
+        or_lo = df["low"].where(in_window).groupby(grp).transform("min")
+        # ATR frozen at the last window bar: the session-quality decision
+        # and the buffer are made ONCE — the breakout bar must not be able
+        # to move its own goalposts
+        atr = ind.atr(df)
+        or_atr = atr.where(in_window).groupby(grp).transform("last")
+        self._cols(df, or_hi=or_hi, or_lo=or_lo, atr=or_atr)
+        self.sess = df["session_date"].to_numpy()
+        self._day = None
+        self._done = False
+        return df
+
+    def on_bar(self, df, i):
+        a = self.a
+        if self.sess[i] != self._day:
+            self._day, self._done = self.sess[i], False
+        if self._done:
+            return None
+        mins = a["minutes_since_open"][i]
+        if not (self.entry_earliest <= mins < self.cutoff):
+            return None
+        hi, lo, atr = a["or_hi"][i], a["or_lo"][i], a["atr"][i]
+        if np.isnan(hi) or np.isnan(lo) or np.isnan(atr) or atr <= 0:
+            return None
+        rng = hi - lo
+        if not (self.p["min_range_atr"] * atr <= rng
+                <= self.p["max_range_atr"] * atr):
+            self._done = True                          # dead or hyper open
+            return None
+        buf = self.p["buffer_atr"] * atr
+        mid = (hi + lo) / 2
+        rr = self.p["target_rr"]
+        if a["close"][i] > hi + buf:
+            self._done = True                          # one-and-done
+            stop = mid if self.p["stop_mode"] == "mid" else lo
+            risk = a["close"][i] - stop
+            return Entry("buy", "market", None, stop=stop,
+                         target=a["close"][i] + rr * risk, tag="or_long")
+        if a["close"][i] < lo - buf:
+            self._done = True
+            stop = mid if self.p["stop_mode"] == "mid" else hi
+            risk = stop - a["close"][i]
+            return Entry("sell", "market", None, stop=stop,
+                         target=a["close"][i] - rr * risk, tag="or_short")
+        return None
+
+
 # ---------------------------------------------------------------- priority 1
 
 class VwapRsiPullback(CardStrategy):
@@ -890,6 +956,7 @@ class PivotLevels(CardStrategy):
 
 ALL_STRATEGIES: dict[str, type[CardStrategy]] = {
     cls.name: cls for cls in (
+        OpeningRange,
         VwapRsiPullback, BbSqueezeBreakout, CprDayRouter, SupertrendRsi,
         EmaSnapbackScalp, EmaSrBreak, TwoLeggedPullback, VolumeBreakout,
         MicroFlagScalp, VwapBandFade, DonchianPullback, FractalTrend,

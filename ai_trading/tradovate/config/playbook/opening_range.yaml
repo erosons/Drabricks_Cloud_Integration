@@ -1,0 +1,70 @@
+module: opening_range
+skills: [data-derived]           # first card born from our own research, not the book
+archetype: compression-breakout (session-open expansion)
+tier: swing                      # 5m bars, at most one trade per session
+priority: 1
+status_requested: limited_test
+
+goal:
+  edge_hypothesis: >
+    The first RTH hour concentrates information arrival and follow-through:
+    the 2026-08 research campaign found 62-83% of level-break entries and
+    essentially all outlier winners clustered at the session open, across
+    independent strategies. A breakout from the opening range, filtered for
+    range quality, trades that concentration deliberately instead of
+    catching it by accident.
+    HONESTY CLAUSE: this hypothesis was OBSERVED IN THE DEV SET, so dev-set
+    results are optimistic by construction; the sealed holdout
+    (>= 2026-05-20) is the only unbiased test and must be treated as the
+    real verdict.
+  markets: [MES, MNQ]
+  timeframe: 5m (range from session open)
+  session: rth
+  target_ret_dd: 2.0
+  expected_frequency: at most 1 trade per session per product
+
+mechanics:
+  range: high/low of the first or_window_minutes (30) of RTH
+  news_rule: >
+    DECLARED UP FRONT (the 08:30 release sits inside range formation):
+    the release move is absorbed INTO the range; entries are permitted only
+    after max(or_window_minutes, 45) minutes past the open — i.e. never
+    before 08:45 ET, matching the live news guard's exit from the 08:30
+    blackout. The 10:00 slot is NOT excluded (breakouts may trigger on it);
+    B2's news-concentration check applies as usual.
+  quality_filter: >
+    skip the session entirely when range width < min_range_atr (1.0) x
+    ATR(14, 5m) or > max_range_atr (6.0) x ATR — dead opens have no fuel,
+    hyper opens have unpayable stops. The per-product $50 risk guard
+    additionally (and deliberately) skips sessions whose stop distance
+    exceeds max risk — a structural bias toward compressed opens.
+  entry: >
+    first 5m CLOSE beyond the range boundary +/- buffer_atr (0.10) x ATR
+    (close-based, never wick — deck convention), market on next bar open;
+    long above range high, short below range low, FIRST close wins the
+    direction; entries expire entry_cutoff_min (120) after the open.
+  stop: stop_mode mid (range midpoint) | opposite (far range boundary)
+  targets: target_rr (2.0) x entry risk
+  exit: bracket, or 15:55 ET session flatten
+  one_and_done: exactly one entry per session; no re-entry after stop or
+    target, no direction flip (resolved — the reverse variant is a separate
+    card if ever justified)
+  regime_gate: none beyond the quality filter (the range IS the regime read)
+  shared_services: [execution_guards]
+
+prerequisites: []
+
+risks_and_guards:
+  - ORB is the most crowded intraday futures idea in existence; any edge
+    must come from the quality filter and cost honesty, not the raw break.
+  - In-sample origin (see honesty clause) — holdout is decisive, one shot.
+  - Slippage on the entry bar at the open hour must survive B3's x2 stress.
+
+ambiguities_open: []
+ambiguities_resolved:
+  - "Entry confirmation: close-through, not stop-at-level (conservative,
+     matches the deck's close-based convention and the sim's one-sided
+     working-order model)."
+  - "News: absorb-into-range + no-entry-before-08:45, declared before any
+     backtest run."
+  - "One-and-done per session; no reverse-on-stop."

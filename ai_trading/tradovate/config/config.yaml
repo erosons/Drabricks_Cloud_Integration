@@ -241,6 +241,22 @@ strategies:
       retest_memory_ticks: 400
       retest_ttl: 40
 
+  # --- Data-derived (2026-08 research campaign) -----------------------------
+  opening_range:
+    skill: data-derived
+    tier: swing
+    priority: 1
+    enabled: false                 # factory-eligible only; lifecycle decides
+    params:
+      or_window_minutes: 30        # range = first N minutes of RTH
+      buffer_atr: 0.10             # close must clear boundary by this x ATR
+      stop_mode: mid               # mid | opposite
+      target_rr: 2.0
+      entry_cutoff_min: 120        # no entries later than N min after open
+      min_range_atr: 1.0           # quality filter (fixed, not gridded)
+      max_range_atr: 6.0
+      # news rule (card): entries never before 08:45 ET regardless of window
+
   # --- Priority 1: build first ---------------------------------------------
   pivot_levels:
     skill: [13, 26]
