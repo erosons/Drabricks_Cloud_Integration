@@ -1,0 +1,85 @@
+# =============================================================================
+# Git Ignore - Databricks Asset Bundle Template
+# =============================================================================
+
+# Databricks Bundle
+.databricks/
+.bundle/
+dist/
+*.whl
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Secrets (NEVER commit these)
+.env
+.env.local
+*.pem
+*.key
+secrets.yml
+secrets.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Data files (don't commit data)
+data/
+*.csv
+*.parquet
+*.json
+!fixtures/*.json
+
+# Build artifacts
+target/
+*.jar

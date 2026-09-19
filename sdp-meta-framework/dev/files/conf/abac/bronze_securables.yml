@@ -1,0 +1,181 @@
+# ============================================================================
+# SDP-META BRONZE SECURABLES — MNPI Governance
+# ============================================================================
+# Defines Unity Catalog securables for the BRONZE layer of the SDP-META
+# pipeline.  Tables tagged `mnpi` at the TABLE level trigger MNPI policies
+# (defined in policies.yml).
+#
+# TWO-TIER SCOPING MODEL:
+#   1. Schema-level policy_bindings (non-empty)
+#      → Engine applies the policy ON SCHEMA — covers ALL tables in that
+#        schema.  No per-table enumeration needed.
+#   2. Schema-level policy_bindings: []
+#      → Engine iterates tables within the schema and applies each table's
+#        own policy_bindings ON TABLE.
+#
+# COLUMN DISCOVERY FOR MASKING:
+#   information_schema: true   → discover columns from
+#                                information_schema.columns at deploy time;
+#                                ALL columns are masked.
+#   information_schema: false  → `mnpi_masked_columns` MUST be declared;
+#                                engine raises an error if missing.
+#   (Not required when the table has no column masking policy.)
+#
+# GRANT MODEL (v2 — persona-keyed):
+#   Schema/table `grants:` maps a PERSONA name to a GROUP name.
+#   The persona's canonical privileges are defined once in policies.yml
+#   `grants` section (e.g. data_reader → [USE CATALOG, USE SCHEMA, SELECT]).
+#   03b_grant_rbac_permissions resolves the full privilege set and routes each
+#   to the correct securable level (USE CATALOG to catalog, USE SCHEMA/SELECT
+#   to schema, etc.).
+#
+#   Bespoke groups that do NOT map to a persona would carry their own explicit
+#   privilege list. None are declared at present - see CATALOGS below.
+#
+#   NO privileges are restated per-schema — if a persona's canonical set
+#   changes, it takes effect everywhere automatically.
+#
+# POLICY PRINCIPALS:
+#   policies.yml derives TO/EXCEPT lists via {schema} templates:
+#     to:     [{schema}_data_readers, {schema}_data_editors]
+#     except: [{schema}_mnpi_approved]
+#   {schema}_governance_admin is NOT in the EXCEPT list - the group does not
+#   exist in the account and is not required at present.
+#   Tables inherit their schema's principals automatically.  Override with
+#   `policy_exceptions:` ONLY when a table needs different principals than
+#   the template provides.
+#
+# PER-SCHEMA ISOLATION:
+#   {schema} in policies.yml resolves from schema_id at deploy time.
+#   e.g. schema_id: hr  →  hr_data_readers, hr_mnpi_approved, etc.
+#   RBAC grant groups MUST match the same naming convention so that the
+#   TO/EXCEPT principals in the generated policy target the right users.
+# ============================================================================
+
+api_version: governance.databricks.com/v2
+kind: SecurableRegistry
+metadata:
+  registry_id: sdp_meta_bronze_securables
+  version: 2.0.0
+  owner: data-platform-team
+
+# ============================================================================
+# CATALOGS
+# ============================================================================
+# No catalog-level grants are declared. `platform_governance_admin` and
+# `data_engineering_team` were removed — neither group exists in the account,
+# and GRANT fails on a principal that does not exist.
+#
+# CONSEQUENCE: persona groups still need USE CATALOG to reach their schemas.
+# 03b routes each persona privilege to the level that permits it, so USE CATALOG
+# is granted to the persona groups at catalog level from the policies.yml
+# persona definition — it does not need a bespoke entry here.
+catalogs:
+  - catalog_id: general_use
+    description: "Primary production catalog for business data products"
+    policy_bindings: []
+    grants: []
+
+# ============================================================================
+# SCHEMAS
+# ============================================================================
+# Per-schema isolation: each schema has dedicated groups named
+# {domain}_{layer}_{persona}:
+#   {domain}_{layer}_data_readers    read-only access  (persona: data_reader)
+#   {domain}_{layer}_data_editors    read + write       (persona: data_editor)
+#   {domain}_{layer}_mnpi_approved   unmasked MNPI      (policy EXCEPT — from template)
+#
+# `domain` is the business domain (hr, finance, employee, ...).
+# `layer` is the medallion layer (bronze, silver, gold).
+# policies.yml templates resolve {domain}_{layer} to build group names,
+# so UC schema names (which may or may not contain the layer) are decoupled
+# from the group naming convention.
+
+schemas:
+  # ---------------------------------------------------------------------------
+  # SCHEMA: hr  (schema-wide MNPI row filtering)
+  # ---------------------------------------------------------------------------
+  # policy_bindings is non-empty → engine applies ON SCHEMA general_use.hr.
+  # ALL tables in hr schema inherit this policy automatically.
+  # No need to list tables explicitly — they are auto-discovered from UC.
+  - schema_id: hr
+    catalog: general_use
+    domain: hr
+    layer: BRONZE
+    productname: COMP
+    company: CLX
+    environment: DEV
+    application: DBX
+    description: "Bronze-layer HR data — raw ingestion from HR systems"
+    policy_bindings:
+      - mnpi_row_filtering
+    tags:
+      mnpi_row_filtered: ""
+    grants:
+      data_reader: GRP_OKTA_COMP_CLX_DEV_DBX_BRONZE_data_readers
+      data_editor: GRP_OKTA_COMP_CLX_DEV_DBX_BRONZE_data_editors
+
+  # ---------------------------------------------------------------------------
+  # SCHEMA: finance  (schema-wide MNPI masking + row filtering)
+  # ---------------------------------------------------------------------------
+  - schema_id: finance
+    catalog: general_use
+    domain: finance
+    layer: BRONZE
+    productname: COMP
+    company: CLX
+    environment: DEV
+    application: DBX
+    description: "Bronze-layer finance data — raw ingestion from ERP/GL systems"
+    policy_bindings:
+      - mnpi_column_masking
+      - mnpi_row_filtering
+    grants:
+      data_reader: GRP_OKTA_COMP_CLX_DEV_DBX_BRONZE_data_readers
+      data_editor: GRP_OKTA_COMP_CLX_DEV_DBX_BRONZE_data_editors
+
+    tables:
+      # ---------------------------------------------------------------
+      # TABLE: accounts_payable
+      # MNPI row-filtered.  information_schema: true → engine queries
+      # information_schema.columns to discover all columns and masks
+      # every one of them.
+      # ---------------------------------------------------------------
+      - table_id: accounts_payable
+        description: "Accounts payable transactions — MNPI protected"
+        tags:
+          mnpi_row_filtered: ""
+        information_schema: true
+        mnpi_expiration_date: "2026-09-12T00:00:00-05:00"
+
+      # ---------------------------------------------------------------
+      # TABLE: cash_flow
+      # MNPI column-masked.  information_schema: false → columns to
+      # mask MUST be declared in mnpi_masked_columns.
+      # ---------------------------------------------------------------
+      - table_id: cash_flow
+        description: "Cash flow records — MNPI protected"
+        tags:
+          mnpi_column_masked: ""
+        information_schema: false
+        mnpi_expiration_date: "never"
+        mnpi_masked_columns:
+          - transaction_id
+          - transaction_date
+          - amount
+          - credit_card
+          - full_name
+          - is_fraud
+          - risk_score
+          - channel
+
+      # ---------------------------------------------------------------
+      # TABLE: accounts_receivable
+      # MNPI column-masked.  information_schema: true.
+      # ---------------------------------------------------------------
+      - table_id: accounts_receivable
+        description: "Accounts receivable records — MNPI column-masked"
+        tags:
+          mnpi_column_masked: ""
+        information_schema: true
+        mnpi_expiration_date: "never"

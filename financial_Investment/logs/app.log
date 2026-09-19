@@ -1,0 +1,552 @@
+01:36:14 [run                 ] INFO  === Nigeria Financial Intelligence System ===
+01:36:14 [run                 ] INFO  Initialising database and running cold scrape...
+01:36:14 [storage.database    ] INFO  Database initialised at /workspaces/Drabricks_Cloud_Integration/financial_Investment/storage/nigeria_finance.db
+01:36:14 [scheduler           ] INFO  Cold start: running all scrapers...
+01:36:15 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+01:36:16 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+01:36:16 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+01:36:16 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+01:36:17 [scrapers.cbn        ] INFO  CBN: 9 policy events
+01:36:18 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/debt-profile/domestic-debt/treasury-bills: 404 Client Error: Not Found for url: https://www.dmo.gov.ng/debt-profile/domestic-debt/treasury-bills
+01:36:20 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/domestic-debt/treasury-bills/: 404 Client Error: NOT FOUND for url: https://www.dmo.gov.ng/domestic-debt/treasury-bills/
+01:36:21 [scrapers.dmo        ] WARNING  DMO T-Bills: falling back to seed data
+01:36:22 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/debt-profile/domestic-debt/fgn-bonds: 404 Client Error: Not Found for url: https://www.dmo.gov.ng/debt-profile/domestic-debt/fgn-bonds
+01:36:23 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/domestic-debt/fgn-bonds/: 404 Client Error: NOT FOUND for url: https://www.dmo.gov.ng/domestic-debt/fgn-bonds/
+01:36:24 [scrapers.dmo        ] WARNING  DMO Bonds: falling back to seed data
+01:36:26 [scrapers.dmo        ] INFO  DMO: 10 treasury rates
+01:36:26 [storage.database    ] INFO  Inserted 10 treasury rates
+01:36:34 [scrapers.base       ] WARNING  [FundManagers] attempt 1/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+01:36:37 [scrapers.base       ] WARNING  [FundManagers] attempt 2/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -2] Name or service not known)"))
+01:36:51 [scrapers.base       ] WARNING  [FundManagers] attempt 3/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+01:36:52 [scrapers.fund_managers] INFO  Fund managers: 16 rate records
+01:36:52 [storage.database    ] INFO  Inserted 16 fund rates
+01:36:56 [scrapers.news       ] INFO  News: 30 articles
+01:36:56 [storage.database    ] INFO  Inserted 30 news articles
+01:36:57 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+01:36:59 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+01:37:01 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+01:37:01 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+01:37:03 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+01:37:07 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+01:37:07 [scrapers.sec_ng     ] INFO  SEC: 0 IPO records
+01:37:11 [scrapers.ngx        ] INFO  NGX: index=0.00, equities=0
+01:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+01:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+01:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+01:37:11 [scheduler           ] INFO  Cold start complete.
+01:37:11 [run                 ] INFO  Starting background scheduler...
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+01:37:11 [apscheduler.scheduler] INFO  Added job "NGX Equities" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "CBN Policy Events" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "DMO Treasury Rates" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "Fund Manager Rates" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "Financial News" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "SEC IPO Filings" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "Opportunity Engine" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Added job "NGX Stock Screener" to job store "default"
+01:37:11 [apscheduler.scheduler] INFO  Scheduler started
+01:37:11 [scheduler           ] INFO  Scheduler started with 8 jobs
+01:37:11 [run                 ] INFO  Launching Streamlit → http://localhost:8501
+2026-06-21 01:37:12.228 Uvicorn server started on 0.0.0.0:8501
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.17.0.2:8501
+  External URL: http://109.204.74.23:8501
+
+02:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" (scheduled at 2026-06-21 03:07:11.399390+01:00)
+02:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" (scheduled at 2026-06-21 03:07:11.399534+01:00)
+02:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" (scheduled at 2026-06-21 03:07:11.399596+01:00)
+02:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+02:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+02:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" executed successfully
+02:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+02:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" executed successfully
+02:07:14 [scrapers.news       ] INFO  News: 30 articles
+02:07:14 [storage.database    ] INFO  Inserted 30 news articles
+02:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 03:37:11 WAT)" executed successfully
+02:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" (scheduled at 2026-06-21 03:37:11.399390+01:00)
+02:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" (scheduled at 2026-06-21 03:37:11.399534+01:00)
+02:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 04:37:11 WAT)" (scheduled at 2026-06-21 03:37:11.398932+01:00)
+02:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" (scheduled at 2026-06-21 03:37:11.399596+01:00)
+02:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+02:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+02:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" executed successfully
+02:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+02:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" executed successfully
+02:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+02:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+02:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+02:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+02:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+02:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 04:37:11 WAT)" executed successfully
+02:37:16 [scrapers.news       ] INFO  News: 30 articles
+02:37:16 [storage.database    ] INFO  Inserted 30 news articles
+02:37:16 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 04:07:11 WAT)" executed successfully
+03:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" (scheduled at 2026-06-21 04:07:11.399390+01:00)
+03:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" (scheduled at 2026-06-21 04:07:11.399534+01:00)
+03:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" (scheduled at 2026-06-21 04:07:11.399596+01:00)
+03:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+03:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+03:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" executed successfully
+03:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+03:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" executed successfully
+03:07:15 [scrapers.news       ] INFO  News: 30 articles
+03:07:15 [storage.database    ] INFO  Inserted 30 news articles
+03:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 04:37:11 WAT)" executed successfully
+03:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 05:37:11 WAT)" (scheduled at 2026-06-21 04:37:11.398932+01:00)
+03:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" (scheduled at 2026-06-21 04:37:11.399390+01:00)
+03:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" (scheduled at 2026-06-21 04:37:11.399534+01:00)
+03:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" (scheduled at 2026-06-21 04:37:11.399596+01:00)
+03:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+03:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+03:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" executed successfully
+03:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+03:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" executed successfully
+03:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+03:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+03:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+03:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+03:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+03:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 05:37:11 WAT)" executed successfully
+03:37:16 [scrapers.news       ] INFO  News: 30 articles
+03:37:16 [storage.database    ] INFO  Inserted 30 news articles
+03:37:16 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 05:07:11 WAT)" executed successfully
+04:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" (scheduled at 2026-06-21 05:07:11.399390+01:00)
+04:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" (scheduled at 2026-06-21 05:07:11.399534+01:00)
+04:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" (scheduled at 2026-06-21 05:07:11.399596+01:00)
+04:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+04:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+04:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" executed successfully
+04:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+04:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" executed successfully
+04:07:15 [scrapers.news       ] INFO  News: 32 articles
+04:07:15 [storage.database    ] INFO  Inserted 32 news articles
+04:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 05:37:11 WAT)" executed successfully
+04:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 06:37:11 WAT)" (scheduled at 2026-06-21 05:37:11.398932+01:00)
+04:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" (scheduled at 2026-06-21 05:37:11.399390+01:00)
+04:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" (scheduled at 2026-06-21 05:37:11.399534+01:00)
+04:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" (scheduled at 2026-06-21 05:37:11.399596+01:00)
+04:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+04:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+04:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" executed successfully
+04:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+04:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" executed successfully
+04:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+04:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+04:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+04:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+04:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+04:37:13 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 06:37:11 WAT)" executed successfully
+04:37:15 [scrapers.news       ] INFO  News: 32 articles
+04:37:15 [storage.database    ] INFO  Inserted 32 news articles
+04:37:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 06:07:11 WAT)" executed successfully
+05:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" (scheduled at 2026-06-21 06:07:11.399390+01:00)
+05:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" (scheduled at 2026-06-21 06:07:11.399534+01:00)
+05:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" (scheduled at 2026-06-21 06:07:11.399596+01:00)
+05:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+05:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+05:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" executed successfully
+05:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+05:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" executed successfully
+05:07:14 [scrapers.news       ] INFO  News: 31 articles
+05:07:14 [storage.database    ] INFO  Inserted 31 news articles
+05:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 06:37:11 WAT)" executed successfully
+05:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 07:37:11 WAT)" (scheduled at 2026-06-21 06:37:11.398932+01:00)
+05:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" (scheduled at 2026-06-21 06:37:11.399390+01:00)
+05:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" (scheduled at 2026-06-21 06:37:11.399534+01:00)
+05:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" (scheduled at 2026-06-21 06:37:11.399596+01:00)
+05:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+05:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+05:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" executed successfully
+05:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+05:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" executed successfully
+05:37:09 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+05:37:09 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+05:37:10 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+05:37:10 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+05:37:10 [scrapers.cbn        ] INFO  CBN: 9 policy events
+05:37:10 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 07:37:11 WAT)" executed successfully
+05:37:12 [scrapers.news       ] INFO  News: 31 articles
+05:37:12 [storage.database    ] INFO  Inserted 31 news articles
+05:37:12 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 07:07:11 WAT)" executed successfully
+06:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" (scheduled at 2026-06-21 07:07:11.399390+01:00)
+06:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" (scheduled at 2026-06-21 07:07:11.399534+01:00)
+06:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" (scheduled at 2026-06-21 07:07:11.399596+01:00)
+06:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+06:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+06:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" executed successfully
+06:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+06:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" executed successfully
+06:07:14 [scrapers.news       ] INFO  News: 29 articles
+06:07:14 [storage.database    ] INFO  Inserted 29 news articles
+06:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 07:37:11 WAT)" executed successfully
+06:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 08:37:11 WAT)" (scheduled at 2026-06-21 07:37:11.398932+01:00)
+06:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" (scheduled at 2026-06-21 07:37:11.399390+01:00)
+06:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" (scheduled at 2026-06-21 07:37:11.399534+01:00)
+06:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" (scheduled at 2026-06-21 07:37:11.399596+01:00)
+06:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+06:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 4 new signals
+06:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" executed successfully
+06:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+06:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" executed successfully
+06:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+06:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+06:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+06:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+06:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+06:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 08:37:11 WAT)" executed successfully
+06:37:14 [scrapers.news       ] INFO  News: 29 articles
+06:37:14 [storage.database    ] INFO  Inserted 29 news articles
+06:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 08:07:11 WAT)" executed successfully
+07:00:00 [apscheduler.executors.default] INFO  Running job "DMO Treasury Rates (trigger: cron[hour='8', minute='0'], next run at: 2026-06-22 08:00:00 WAT)" (scheduled at 2026-06-21 08:00:00+01:00)
+07:00:01 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/debt-profile/domestic-debt/treasury-bills: 404 Client Error: Not Found for url: https://www.dmo.gov.ng/debt-profile/domestic-debt/treasury-bills
+07:00:04 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/domestic-debt/treasury-bills/: 404 Client Error: NOT FOUND for url: https://www.dmo.gov.ng/domestic-debt/treasury-bills/
+07:00:06 [scrapers.dmo        ] WARNING  DMO T-Bills: falling back to seed data
+07:00:07 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/debt-profile/domestic-debt/fgn-bonds: 404 Client Error: Not Found for url: https://www.dmo.gov.ng/debt-profile/domestic-debt/fgn-bonds
+07:00:13 [scrapers.base       ] WARNING  [DMO] attempt 1/1 failed for https://www.dmo.gov.ng/domestic-debt/fgn-bonds/: 404 Client Error: NOT FOUND for url: https://www.dmo.gov.ng/domestic-debt/fgn-bonds/
+07:00:15 [scrapers.dmo        ] WARNING  DMO Bonds: falling back to seed data
+07:00:18 [scrapers.dmo        ] INFO  DMO: 10 treasury rates
+07:00:18 [storage.database    ] INFO  Inserted 10 treasury rates
+07:00:18 [apscheduler.executors.default] INFO  Job "DMO Treasury Rates (trigger: cron[hour='8', minute='0'], next run at: 2026-06-22 08:00:00 WAT)" executed successfully
+07:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" (scheduled at 2026-06-21 08:07:11.399390+01:00)
+07:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" (scheduled at 2026-06-21 08:07:11.399534+01:00)
+07:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" (scheduled at 2026-06-21 08:07:11.399596+01:00)
+07:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+07:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+07:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" executed successfully
+07:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+07:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" executed successfully
+07:07:14 [scrapers.news       ] INFO  News: 32 articles
+07:07:14 [storage.database    ] INFO  Inserted 32 news articles
+07:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 08:37:11 WAT)" executed successfully
+07:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 09:37:11 WAT)" (scheduled at 2026-06-21 08:37:11.398932+01:00)
+07:37:11 [apscheduler.executors.default] INFO  Running job "Fund Manager Rates (trigger: interval[6:00:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 08:37:11.399271+01:00)
+07:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" (scheduled at 2026-06-21 08:37:11.399390+01:00)
+07:37:11 [apscheduler.executors.default] INFO  Running job "SEC IPO Filings (trigger: interval[6:00:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 08:37:11.399466+01:00)
+07:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" (scheduled at 2026-06-21 08:37:11.399534+01:00)
+07:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" (scheduled at 2026-06-21 08:37:11.399596+01:00)
+07:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+07:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+07:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" executed successfully
+07:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+07:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" executed successfully
+07:37:12 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+07:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+07:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+07:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+07:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+07:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+07:37:13 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 09:37:11 WAT)" executed successfully
+07:37:14 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+07:37:14 [scrapers.news       ] INFO  News: 32 articles
+07:37:14 [storage.database    ] INFO  Inserted 32 news articles
+07:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 09:07:11 WAT)" executed successfully
+07:37:18 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+07:37:18 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+07:37:20 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+07:37:21 [scrapers.base       ] WARNING  [FundManagers] attempt 1/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+07:37:24 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+07:37:24 [scrapers.sec_ng     ] INFO  SEC: 0 IPO records
+07:37:24 [apscheduler.executors.default] INFO  Job "SEC IPO Filings (trigger: interval[6:00:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+07:37:33 [scrapers.base       ] WARNING  [FundManagers] attempt 2/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+07:37:47 [scrapers.base       ] WARNING  [FundManagers] attempt 3/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+07:37:48 [scrapers.fund_managers] INFO  Fund managers: 16 rate records
+07:37:48 [storage.database    ] INFO  Inserted 16 fund rates
+07:37:48 [apscheduler.executors.default] INFO  Job "Fund Manager Rates (trigger: interval[6:00:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+08:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" (scheduled at 2026-06-21 09:07:11.399390+01:00)
+08:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" (scheduled at 2026-06-21 09:07:11.399534+01:00)
+08:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" (scheduled at 2026-06-21 09:07:11.399596+01:00)
+08:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+08:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+08:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" executed successfully
+08:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+08:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" executed successfully
+08:07:15 [scrapers.news       ] INFO  News: 29 articles
+08:07:15 [storage.database    ] INFO  Inserted 29 news articles
+08:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 09:37:11 WAT)" executed successfully
+08:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 10:37:11 WAT)" (scheduled at 2026-06-21 09:37:11.398932+01:00)
+08:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" (scheduled at 2026-06-21 09:37:11.399390+01:00)
+08:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" (scheduled at 2026-06-21 09:37:11.399534+01:00)
+08:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" (scheduled at 2026-06-21 09:37:11.399596+01:00)
+08:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+08:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+08:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" executed successfully
+08:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+08:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" executed successfully
+08:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+08:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+08:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+08:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+08:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+08:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 10:37:11 WAT)" executed successfully
+08:37:14 [scrapers.news       ] INFO  News: 29 articles
+08:37:14 [storage.database    ] INFO  Inserted 29 news articles
+08:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 10:07:11 WAT)" executed successfully
+09:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" (scheduled at 2026-06-21 10:07:11.399390+01:00)
+09:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" (scheduled at 2026-06-21 10:07:11.399534+01:00)
+09:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" (scheduled at 2026-06-21 10:07:11.399596+01:00)
+09:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+09:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+09:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" executed successfully
+09:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+09:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" executed successfully
+09:07:14 [scrapers.news       ] INFO  News: 33 articles
+09:07:14 [storage.database    ] INFO  Inserted 33 news articles
+09:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 10:37:11 WAT)" executed successfully
+09:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 11:37:11 WAT)" (scheduled at 2026-06-21 10:37:11.398932+01:00)
+09:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" (scheduled at 2026-06-21 10:37:11.399390+01:00)
+09:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" (scheduled at 2026-06-21 10:37:11.399534+01:00)
+09:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" (scheduled at 2026-06-21 10:37:11.399596+01:00)
+09:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+09:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+09:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" executed successfully
+09:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+09:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" executed successfully
+09:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+09:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+09:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+09:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+09:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+09:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 11:37:11 WAT)" executed successfully
+09:37:14 [scrapers.news       ] INFO  News: 33 articles
+09:37:14 [storage.database    ] INFO  Inserted 33 news articles
+09:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 11:07:11 WAT)" executed successfully
+10:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" (scheduled at 2026-06-21 11:07:11.399390+01:00)
+10:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" (scheduled at 2026-06-21 11:07:11.399534+01:00)
+10:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" (scheduled at 2026-06-21 11:07:11.399596+01:00)
+10:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+10:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+10:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" executed successfully
+10:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+10:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" executed successfully
+10:07:14 [scrapers.news       ] INFO  News: 31 articles
+10:07:14 [storage.database    ] INFO  Inserted 31 news articles
+10:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 11:37:11 WAT)" executed successfully
+10:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 12:37:11 WAT)" (scheduled at 2026-06-21 11:37:11.398932+01:00)
+10:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" (scheduled at 2026-06-21 11:37:11.399390+01:00)
+10:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" (scheduled at 2026-06-21 11:37:11.399534+01:00)
+10:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" (scheduled at 2026-06-21 11:37:11.399596+01:00)
+10:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+10:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+10:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" executed successfully
+10:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+10:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" executed successfully
+10:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+10:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+10:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+10:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+10:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+10:37:13 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 12:37:11 WAT)" executed successfully
+10:37:14 [scrapers.news       ] INFO  News: 31 articles
+10:37:14 [storage.database    ] INFO  Inserted 31 news articles
+10:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 12:07:11 WAT)" executed successfully
+11:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" (scheduled at 2026-06-21 12:07:11.399390+01:00)
+11:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" (scheduled at 2026-06-21 12:07:11.399534+01:00)
+11:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" (scheduled at 2026-06-21 12:07:11.399596+01:00)
+11:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+11:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+11:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" executed successfully
+11:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+11:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" executed successfully
+11:07:15 [scrapers.news       ] INFO  News: 32 articles
+11:07:15 [storage.database    ] INFO  Inserted 32 news articles
+11:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 12:37:11 WAT)" executed successfully
+11:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 13:37:11 WAT)" (scheduled at 2026-06-21 12:37:11.398932+01:00)
+11:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" (scheduled at 2026-06-21 12:37:11.399390+01:00)
+11:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" (scheduled at 2026-06-21 12:37:11.399534+01:00)
+11:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" (scheduled at 2026-06-21 12:37:11.399596+01:00)
+11:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+11:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+11:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" executed successfully
+11:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+11:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" executed successfully
+11:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+11:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+11:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+11:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+11:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+11:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 13:37:11 WAT)" executed successfully
+11:37:14 [scrapers.news       ] INFO  News: 32 articles
+11:37:14 [storage.database    ] INFO  Inserted 32 news articles
+11:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 13:07:11 WAT)" executed successfully
+12:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" (scheduled at 2026-06-21 13:07:11.399390+01:00)
+12:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" (scheduled at 2026-06-21 13:07:11.399534+01:00)
+12:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" (scheduled at 2026-06-21 13:07:11.399596+01:00)
+12:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+12:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+12:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" executed successfully
+12:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+12:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" executed successfully
+12:07:16 [scrapers.news       ] INFO  News: 31 articles
+12:07:16 [storage.database    ] INFO  Inserted 31 news articles
+12:07:16 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 13:37:11 WAT)" executed successfully
+12:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 13:37:11.398932+01:00)
+12:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" (scheduled at 2026-06-21 13:37:11.399390+01:00)
+12:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" (scheduled at 2026-06-21 13:37:11.399534+01:00)
+12:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" (scheduled at 2026-06-21 13:37:11.399596+01:00)
+12:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+12:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+12:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" executed successfully
+12:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+12:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" executed successfully
+12:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+12:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+12:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+12:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+12:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+12:37:13 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+12:37:15 [scrapers.news       ] INFO  News: 31 articles
+12:37:15 [storage.database    ] INFO  Inserted 31 news articles
+12:37:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 14:07:11 WAT)" executed successfully
+13:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 14:07:11.399390+01:00)
+13:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 14:07:11.399534+01:00)
+13:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" (scheduled at 2026-06-21 14:07:11.399596+01:00)
+13:07:09 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+13:07:09 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+13:07:09 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+13:07:09 [storage.database    ] INFO  Upserted 39 stock picks
+13:07:09 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+13:07:14 [scrapers.news       ] INFO  News: 30 articles
+13:07:14 [storage.database    ] INFO  Inserted 30 news articles
+13:07:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 14:37:11 WAT)" executed successfully
+13:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 15:37:11 WAT)" (scheduled at 2026-06-21 14:37:11.398932+01:00)
+13:37:11 [apscheduler.executors.default] INFO  Running job "Fund Manager Rates (trigger: interval[6:00:00], next run at: 2026-06-21 20:37:11 WAT)" (scheduled at 2026-06-21 14:37:11.399271+01:00)
+13:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" (scheduled at 2026-06-21 14:37:11.399390+01:00)
+13:37:11 [apscheduler.executors.default] INFO  Running job "SEC IPO Filings (trigger: interval[6:00:00], next run at: 2026-06-21 20:37:11 WAT)" (scheduled at 2026-06-21 14:37:11.399466+01:00)
+13:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" (scheduled at 2026-06-21 14:37:11.399534+01:00)
+13:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" (scheduled at 2026-06-21 14:37:11.399596+01:00)
+13:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+13:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+13:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" executed successfully
+13:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+13:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" executed successfully
+13:37:12 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+13:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+13:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+13:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+13:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+13:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+13:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 15:37:11 WAT)" executed successfully
+13:37:14 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+13:37:15 [scrapers.news       ] INFO  News: 30 articles
+13:37:15 [storage.database    ] INFO  Inserted 30 news articles
+13:37:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 15:07:11 WAT)" executed successfully
+13:37:18 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/public-offers/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/public-offers/
+13:37:19 [scrapers.base       ] WARNING  [SEC-NG] attempt 1/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+13:37:21 [scrapers.base       ] WARNING  [SEC-NG] attempt 2/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+13:37:22 [scrapers.base       ] WARNING  [FundManagers] attempt 1/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+13:37:25 [scrapers.base       ] WARNING  [FundManagers] attempt 2/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -2] Name or service not known)"))
+13:37:25 [scrapers.base       ] WARNING  [SEC-NG] attempt 3/3 failed for https://www.sec.gov.ng/news/: 404 Client Error: Not Found for url: https://www.sec.gov.ng/news/
+13:37:25 [scrapers.sec_ng     ] INFO  SEC: 0 IPO records
+13:37:25 [apscheduler.executors.default] INFO  Job "SEC IPO Filings (trigger: interval[6:00:00], next run at: 2026-06-21 20:37:11 WAT)" executed successfully
+13:37:36 [scrapers.base       ] WARNING  [FundManagers] attempt 3/3 failed for https://www.bambooapp.co: HTTPSConnectionPool(host='www.bambooapp.co', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("HTTPSConnection(host='www.bambooapp.co', port=443): Failed to resolve 'www.bambooapp.co' ([Errno -3] Temporary failure in name resolution)"))
+13:37:38 [scrapers.fund_managers] INFO  Fund managers: 16 rate records
+13:37:38 [storage.database    ] INFO  Inserted 16 fund rates
+13:37:38 [apscheduler.executors.default] INFO  Job "Fund Manager Rates (trigger: interval[6:00:00], next run at: 2026-06-21 20:37:11 WAT)" executed successfully
+14:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" (scheduled at 2026-06-21 15:07:11.399390+01:00)
+14:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" (scheduled at 2026-06-21 15:07:11.399534+01:00)
+14:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" (scheduled at 2026-06-21 15:07:11.399596+01:00)
+14:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+14:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+14:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" executed successfully
+14:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+14:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" executed successfully
+14:07:15 [scrapers.news       ] INFO  News: 30 articles
+14:07:15 [storage.database    ] INFO  Inserted 30 news articles
+14:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 15:37:11 WAT)" executed successfully
+14:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 16:37:11 WAT)" (scheduled at 2026-06-21 15:37:11.398932+01:00)
+14:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" (scheduled at 2026-06-21 15:37:11.399390+01:00)
+14:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" (scheduled at 2026-06-21 15:37:11.399534+01:00)
+14:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" (scheduled at 2026-06-21 15:37:11.399596+01:00)
+14:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+14:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+14:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" executed successfully
+14:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+14:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" executed successfully
+14:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+14:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+14:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+14:37:14 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+14:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+14:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 16:37:11 WAT)" executed successfully
+14:37:15 [scrapers.news       ] INFO  News: 31 articles
+14:37:15 [storage.database    ] INFO  Inserted 31 news articles
+14:37:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 16:07:11 WAT)" executed successfully
+15:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" (scheduled at 2026-06-21 16:07:11.399390+01:00)
+15:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" (scheduled at 2026-06-21 16:07:11.399534+01:00)
+15:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" (scheduled at 2026-06-21 16:07:11.399596+01:00)
+15:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+15:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+15:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" executed successfully
+15:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+15:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" executed successfully
+15:07:15 [scrapers.news       ] INFO  News: 31 articles
+15:07:15 [storage.database    ] INFO  Inserted 31 news articles
+15:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 16:37:11 WAT)" executed successfully
+15:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 17:37:11 WAT)" (scheduled at 2026-06-21 16:37:11.398932+01:00)
+15:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" (scheduled at 2026-06-21 16:37:11.399390+01:00)
+15:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" (scheduled at 2026-06-21 16:37:11.399534+01:00)
+15:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" (scheduled at 2026-06-21 16:37:11.399596+01:00)
+15:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+15:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+15:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" executed successfully
+15:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+15:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" executed successfully
+15:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+15:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+15:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+15:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+15:37:13 [scrapers.cbn        ] INFO  CBN: 9 policy events
+15:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 17:37:11 WAT)" executed successfully
+15:37:14 [scrapers.news       ] INFO  News: 32 articles
+15:37:14 [storage.database    ] INFO  Inserted 32 news articles
+15:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 17:07:11 WAT)" executed successfully
+16:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" (scheduled at 2026-06-21 17:07:11.399390+01:00)
+16:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" (scheduled at 2026-06-21 17:07:11.399534+01:00)
+16:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" (scheduled at 2026-06-21 17:07:11.399596+01:00)
+16:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: FBNH (BUY)
+16:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+16:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" executed successfully
+16:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+16:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" executed successfully
+16:07:15 [scrapers.news       ] INFO  News: 32 articles
+16:07:15 [storage.database    ] INFO  Inserted 32 news articles
+16:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 17:37:11 WAT)" executed successfully
+16:37:11 [apscheduler.executors.default] INFO  Running job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 18:37:11 WAT)" (scheduled at 2026-06-21 17:37:11.398932+01:00)
+16:37:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" (scheduled at 2026-06-21 17:37:11.399390+01:00)
+16:37:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" (scheduled at 2026-06-21 17:37:11.399534+01:00)
+16:37:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" (scheduled at 2026-06-21 17:37:11.399596+01:00)
+16:37:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: NEM (BUY)
+16:37:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+16:37:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" executed successfully
+16:37:11 [storage.database    ] INFO  Upserted 39 stock picks
+16:37:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" executed successfully
+16:37:12 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/monetary/mpc.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/monetary/mpc.asp
+16:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/MonetaryPolicy/MPC.asp
+16:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/out/pressreleases.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/out/pressreleases.asp
+16:37:13 [scrapers.base       ] WARNING  [CBN] attempt 1/1 failed for https://www.cbn.gov.ng/documents/pressrelease.asp: 404 Client Error: Not Found for url: https://www.cbn.gov.ng/documents/pressrelease.asp
+16:37:14 [scrapers.cbn        ] INFO  CBN: 9 policy events
+16:37:14 [apscheduler.executors.default] INFO  Job "CBN Policy Events (trigger: interval[1:00:00], next run at: 2026-06-21 18:37:11 WAT)" executed successfully
+16:37:14 [scrapers.news       ] INFO  News: 31 articles
+16:37:14 [storage.database    ] INFO  Inserted 31 news articles
+16:37:14 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 18:07:11 WAT)" executed successfully
+17:07:11 [apscheduler.executors.default] INFO  Running job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" (scheduled at 2026-06-21 18:07:11.399390+01:00)
+17:07:11 [apscheduler.executors.default] INFO  Running job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" (scheduled at 2026-06-21 18:07:11.399534+01:00)
+17:07:11 [apscheduler.executors.default] INFO  Running job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" (scheduled at 2026-06-21 18:07:11.399596+01:00)
+17:07:11 [processors.stock_screener] INFO  Stock screener: scored 39 stocks, top pick: NEM (BUY)
+17:07:11 [processors.opportunity_engine] INFO  Opportunity engine: 0 new signals
+17:07:11 [apscheduler.executors.default] INFO  Job "Opportunity Engine (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" executed successfully
+17:07:11 [storage.database    ] INFO  Upserted 39 stock picks
+17:07:11 [apscheduler.executors.default] INFO  Job "NGX Stock Screener (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" executed successfully
+17:07:15 [scrapers.news       ] INFO  News: 31 articles
+17:07:15 [storage.database    ] INFO  Inserted 31 news articles
+17:07:15 [apscheduler.executors.default] INFO  Job "Financial News (trigger: interval[0:30:00], next run at: 2026-06-21 18:37:11 WAT)" executed successfully

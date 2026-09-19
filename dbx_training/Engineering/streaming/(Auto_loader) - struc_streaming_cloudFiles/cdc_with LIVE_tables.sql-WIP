@@ -1,0 +1,12 @@
+-- Maintain an up to date replica of a table stored elsewhere with APPLY CHANGES
+
+APPLY CHANGES INTO LIVE.cities
+FROM STREAM(Live.city_updates)
+KEYS (city_id)
+SEQUENCE BY TIMESTAMP
+
+A sequenc that is used to order the changes
+- log sequences
+- TIMESTAMP
+- Ingestion time
+

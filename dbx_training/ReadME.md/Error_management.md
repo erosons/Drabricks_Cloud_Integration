@@ -1,0 +1,1 @@
+# https://learn.microsoft.com/en-us/azure/databricks/error-messages/error-classes#parse_syntax_error

@@ -1,0 +1,6 @@
+RowID,ShipDate,ShipMode,CustomerID,CustomerName,Segment,Category
+81,11/11/2016,Second Class,CG-12520,Claire Gute,Consumer,Furniture
+82,11/11/2016,Second Class,CG-12520,Claire Gute,Consumer,Furniture
+83,6/16/2016,Second Class,DV-13045,Darrin Van Huff,Corporate,Office Supplies
+84,10/18/2015,Standard Class,SO-20335,Sean O'Donnell,Consumer,Furniture
+85,10/18/2015,Standard Class,SO-20335,Sean O'Donnell,Consumer,Office Supplies

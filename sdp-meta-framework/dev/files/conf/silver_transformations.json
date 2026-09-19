@@ -1,0 +1,13 @@
+[
+  {
+    "target_table": "employees",
+    "select_exp": [
+      "employee_id",
+      "CONCAT(first_name, ' ', last_name) AS full_name",
+      "email",
+      "department",
+      "CAST(hire_date AS DATE) AS hire_date"
+    ],
+    "where_clause": ["employee_id IS NOT NULL AND department IS NOT NULL"]
+  }
+]

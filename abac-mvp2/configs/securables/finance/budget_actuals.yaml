@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.finance.budget_actuals
+# Template: financial_table
+# Review and customize column_overrides as needed.
+
+table_id: budget_actuals
+catalog: general_use
+schema: finance
+template: financial_table
+description: 'Auto-discovered table: general_use.finance.budget_actuals'
+policy_bindings: []
+grants: []
+column_overrides: []

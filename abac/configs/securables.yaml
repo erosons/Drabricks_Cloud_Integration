@@ -1,0 +1,251 @@
+# ============================================================================
+# UC DATA SECURABLES CONFIGURATION
+# ============================================================================
+# This file defines the Unity Catalog DATA TARGETS only:
+#   - Catalogs, schemas, tables, and columns
+#   - Governed tag assignments per object
+#   - Policy bindings (which policies from policies.yaml apply here)
+#   - Base RBAC grants (privileges on objects)
+#
+# This file does NOT define:
+#   - Policy logic, UDFs, or group templates (-> policies.yaml)
+#   - Allowed/exception groups for policies (-> policies.yaml TO/EXCEPT)
+#   - Group creation (-> policies.yaml group_templates)
+#
+# The reconciliation engine reads BOTH files:
+#   securables.yaml -> What objects exist, how they're tagged, who gets RBAC
+#   policies.yaml   -> What rules enforce, who is allowed/excepted per policy
+# ============================================================================
+
+api_version: governance.databricks.com/v1
+kind: SecurableRegistry
+metadata:
+  registry_id: enterprise_data_products
+  version: 1.0.0
+  status: approved
+  owner: data-platform-team
+  last_reviewed: "2024-01-15"
+
+# ============================================================================
+# SECTION 1: CATALOG DEFINITIONS
+# ============================================================================
+# Catalogs are the top-level boundary. Tags applied here set defaults
+# that ABAC policies can match against for all child objects.
+# policy_bindings reference policy_ids from policies.yaml that should be
+# applied ON this catalog (catalog-level scope).
+
+catalogs:
+  - catalog_id: general_use
+    description: "Primary production catalog for business data products"
+    policy_bindings:
+      - pii_email_masking   # catalog-level: masks all class.email_address columns
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, MANAGE]
+      - group: data_engineering_team
+        privileges: [USE CATALOG, CREATE SCHEMA]
+
+# ============================================================================
+# SECTION 2: SCHEMA DEFINITIONS
+# ============================================================================
+# Schemas define domain boundaries. Each schema can bind additional policies
+# that inherit to all tables within the schema.
+# policy_bindings reference policy_ids applied ON this schema (schema-level scope).
+
+schemas:
+  - schema_id: customer
+    catalog: general_use
+    description: "Customer domain data products"
+    policy_bindings:
+      - regional_data_isolation   # schema-level: filters rows by region
+      - pii_phone_masking         # schema-level: masks class.phone_number columns
+    # data_product:
+    #   product_id: customer_360
+    #   product_owner: customer-data-product-owner
+    #   steward: customer-governance-steward
+    #   domain: customer
+
+  # - schema_id: hr
+  #   catalog: general_use
+  #   description: "Human Resources domain data products"
+  #   policy_bindings: []  # No schema-level policies - uses table-level only
+  #   grants:
+  #     - group: hr_data_readers
+  #       privileges: [USE SCHEMA]
+  #     - group: hr_data_editors
+  #       privileges: [USE SCHEMA]
+  #     - group: hr_cleartext_approved
+  #       privileges: [USE SCHEMA]
+  #   data_product:
+  #     product_id: hr_core
+  #     product_owner: hr-data-product-owner
+  #     steward: hr-governance-steward
+  #     domain: hr
+
+# ============================================================================
+# SECTION 3: TABLE DEFINITIONS
+# ============================================================================
+# Tables define individual data products. Each table specifies:
+#   - Column definitions with governed tags
+#   - Base RBAC grants only (SELECT, MODIFY, etc.)
+#   - Table-level policy_bindings for targeted enforcement
+#
+# NOTE: Groups and their allowed/exception roles are NOT defined here.
+# They belong in policies.yaml under each policy's TO/EXCEPT clauses.
+# This file only grants privileges to groups that already exist.
+
+tables:
+  # ---------------------------------------------------------------------------
+  # TABLE 1: customer_profile
+  # Policies bound: active_records_only (table-level), ssn_full_redaction (table-level)
+  # Also inherits: regional_data_isolation, pii_phone_masking (from schema)
+  #                pii_email_masking (from catalog)
+  # ---------------------------------------------------------------------------
+  - table_id: customer_profile
+    catalog: general_use
+    schema: customer
+    description: "Core customer profile with PII fields"
+    policy_bindings:
+      - active_records_only     # table-level: hide soft-deleted rows
+      - ssn_full_redaction      # table-level: fully redact SSN column
+    # grants:
+    #   - group: customer_data_editors
+    #   - group: customer_cleartext_approved
+    columns:
+      - name: customer_id
+        type: BIGINT
+        tags: {}
+      - name: first_name
+        type: STRING
+        tags:
+          class.name: ""
+      - name: last_name
+        type: STRING
+        tags:
+          class.name: ""
+      - name: email
+        type: STRING
+        tags:
+          class.email_address: ""
+      - name: phone_number
+        type: STRING
+        tags:
+          class.phone_number: ""
+      - name: date_of_birth
+        type: DATE
+        tags:
+          class.date_of_birth: ""
+      - name: ssn
+        type: STRING
+        tags:
+          class.us_ssn: ""
+      - name: region_code
+        type: STRING
+        tags:
+          region_identifier: ""
+      - name: is_active
+        type: BOOLEAN
+        tags:
+          soft_delete_flag: ""
+      - name: created_at
+        type: TIMESTAMP
+        tags: {}
+
+  # ---------------------------------------------------------------------------
+  # TABLE 2: customer_addresses
+  # Policies bound: none at table-level
+  # Inherits: regional_data_isolation, pii_phone_masking (from schema)
+  #           pii_email_masking (from catalog)
+  # ---------------------------------------------------------------------------
+  # - table_id: customer_addresses
+  #   catalog: general_use
+  #   schema: customer
+  #   description: "Customer mailing and billing addresses"
+  #   policy_bindings: []  # Relies entirely on inherited schema/catalog policies
+  #   grants:
+  #     - group: customer_data_readers
+  #       privileges: [SELECT]
+  #     - group: customer_cleartext_approved
+  #       privileges: [SELECT]
+  #   columns:
+  #     - name: address_id
+  #       type: BIGINT
+  #       tags: {}
+  #     - name: customer_id
+  #       type: BIGINT
+  #       tags: {}
+  #     - name: street_address
+  #       type: STRING
+  #       tags:
+  #         class.location: ""
+  #     - name: city
+  #       type: STRING
+  #       tags: {}
+  #     - name: state
+  #       type: STRING
+  #       tags: {}
+  #     - name: postal_code
+  #       type: STRING
+  #       tags:
+  #         class.location: ""
+  #     - name: country_code
+  #       type: STRING
+
+  # # ---------------------------------------------------------------------------
+  # # TABLE 3: employee_records
+  # # Policies bound: department_isolation (table-level)
+  # # Inherits: pii_email_masking (from catalog)
+  # # ---------------------------------------------------------------------------
+  # - table_id: employee_records
+  #   catalog: general_use
+  #   schema: hr
+  #   description: "Employee master data with compensation"
+  #   policy_bindings:
+  #     - department_isolation   # table-level: restrict rows to user's department
+  #   grants:
+  #     - group: hr_data_readers
+  #       privileges: [SELECT]
+  #     - group: hr_data_editors
+  #       privileges: [SELECT, MODIFY]
+  #     - group: hr_cleartext_approved
+  #       privileges: [SELECT]
+  #   columns:
+  #     - name: employee_id
+  #       type: BIGINT
+  #       tags: {}
+  #     - name: full_name
+  #       type: STRING
+  #       tags:
+  #         class.name: ""
+  #     - name: email
+  #       type: STRING
+  #       tags:
+  #         class.email_address: ""
+  #     - name: ssn
+  #       type: STRING
+  #       tags:
+  #         class.us_ssn: ""
+  #     - name: department
+  #       type: STRING
+  #     - name: salary
+  #       type: DOUBLE
+  #       tags: {}
+  #     - name: date_of_birth
+  #       type: DATE
+  #       tags:
+  #         class.date_of_birth: ""
+  #     - name: hire_date
+  #       type: DATE
+  #       tags: {}
+  #     - name: region_code
+  #       type: STRING
+
+# ============================================================================
+# SECTION 4: PUBLICATION REQUIREMENTS
+# ============================================================================
+# Validation rules that must pass before a data product is published.
+
+publication_requirements:
+  mandatory_table_tags:
+  require_grants_defined: true
+  require_policy_binding_at_any_level: true

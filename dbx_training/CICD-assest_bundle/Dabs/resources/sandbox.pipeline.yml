@@ -1,0 +1,13 @@
+# The main pipeline for sandbox
+resources:
+  pipelines:
+    sandbox_pipeline:
+      name: sandbox_pipeline
+      catalog: deployment_${bundle.environment}
+      target: sandbox_${bundle.environment}
+      libraries:
+        - notebook:
+            path: ../src/dlt_pipeline.ipynb
+
+      configuration:
+        bundle.sourcePath: ${workspace.file_path}/src

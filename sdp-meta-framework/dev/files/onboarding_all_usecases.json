@@ -1,0 +1,57 @@
+[
+  {
+    "_comment": "UC1: CloudFiles CSV - Basic ingestion with DQE, quarantine, CDC SCD Type 2",
+    "data_flow_id": "100",
+    "data_flow_group": "uc1_cloudfiles",
+    "source_system": "S3",
+    "source_format": "cloudFiles",
+    "source_details": {
+      "source_path_dev": "{uc_volume_path}/landing_zone",
+      "source_schema_path": "{uc_volume_path}/conf/ddl/employees.ddl",
+      "source_metadata": {
+        "include_autoloader_metadata_column": "True",
+        "autoloader_metadata_col_name": "source_metadata",
+        "select_metadata_cols": {
+          "input_file_name": "_metadata.file_name",
+          "input_file_path": "_metadata.file_path"
+        }
+      }
+    },
+    "bronze_catalog_dev": "{uc_catalog_name}",
+    "bronze_database_dev": "{bronze_schema}",
+    "bronze_table": "employees",
+    "bronze_table_comment": "Orders bronze table - raw CSV ingestion",
+    "bronze_reader_options": {
+      "cloudFiles.format": "csv",
+      "cloudFiles.rescuedDataColumn": "_rescued_data",
+      "header": "true",
+      "cloudFiles.schemaEvolutionMode": "rescue"
+    },
+    "bronze_table_properties": {
+      "pipelines.autoOptimize.managed": "true"
+    },
+    "bronze_cluster_by": ["employee_id", "hire_date"],
+    "bronze_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc1_orders/bronze_expectations.json",
+    "bronze_catalog_quarantine_dev": "{uc_catalog_name}",
+    "bronze_database_quarantine_dev": "{bronze_schema}",
+    "bronze_quarantine_table": "employees_quarantine",
+    "bronze_quarantine_table_properties": {
+      "pipelines.reset.allowed": "false"
+    },
+    "bronze_quarantine_table_cluster_by": ["employee_id"],
+    "silver_catalog_dev": "{uc_catalog_name}",
+    "silver_database_dev": "{silver_schema}",
+    "silver_table": "employees",
+    "silver_table_comment": "Employees silver - CDC SCD Type 2",
+    "silver_cdc_apply_changes": {
+      "keys": ["employee_id"],
+      "sequence_by": "updated_at",
+      "scd_type": "1",
+      "apply_as_deletes": "operation = 'DELETE'",
+      "except_column_list": ["operation", "updated_at", "_rescued_data"]
+    },
+    "silver_cluster_by": ["order_id", "customer_id"],
+    "silver_transformation_json_dev": "{uc_volume_path}/conf/silver_transformations.json",
+    "silver_data_quality_expectations_json_dev": "{uc_volume_path}/conf/dqe/uc1_orders/silver_expectations.json"
+  }
+]

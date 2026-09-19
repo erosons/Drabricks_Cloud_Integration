@@ -1,0 +1,16 @@
+id: 51de3d16-48a9-4e38-9bc7-4de932b02482
+pipeline_type: WORKSPACE
+name: samplesuperstore
+libraries:
+  - glob:
+      include: /Workspace/Users/eromonsei.o.samson@gopherwood.org/Drabricks_Cloud_Integration/Databricks-practice/Engineering/declarative_pipeline/source_mgt/**
+  - glob:
+      include: /Workspace/Users/eromonsei.o.samson@gopherwood.org/Drabricks_Cloud_Integration/Databricks-practice/Engineering/declarative_pipeline/sales_dwh/**
+schema: bronze
+continuous: false
+development: false
+photon: true
+channel: CURRENT
+catalog: mysandbox
+serverless: true
+root_path: /Workspace/Users/eromonsei.o.samson@gopherwood.org/Drabricks_Cloud_Integration/Databricks-practice/Engineering/declarative_pipeline

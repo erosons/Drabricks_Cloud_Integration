@@ -1,0 +1,9 @@
+{
+  "expect": {
+    "valid_value": "value IS NOT NULL",
+    "valid_timestamp": "timestamp IS NOT NULL"
+  },
+  "expect_or_quarantine": {
+    "quarantine_null_key": "key IS NULL"
+  }
+}

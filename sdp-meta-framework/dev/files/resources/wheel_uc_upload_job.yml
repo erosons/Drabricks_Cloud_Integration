@@ -1,0 +1,75 @@
+# =============================================================================
+# Wheel UC Volume Upload Job
+# =============================================================================
+# Copies the DAB-built wheel artifact to UC Volume for external access.
+# The wheel is automatically built by DAB on every `bundle deploy`.
+#
+# Workflow:
+#   1. copy_to_volume: Copy DAB artifact wheel to UC Volume
+#   2. onboard_specs: Re-run onboarding to refresh dataflowspec tables
+#
+# This job is idempotent - safe to re-run after framework changes.
+# =============================================================================
+
+resources:
+  jobs:
+    wheel_uc_upload_load_specs:
+      name: "[${var.env}] SDP-META: Upload Wheel to UC Volume"
+      description: |
+        Copies the DAB-built wheel artifact to UC Volume for external access.
+        Pipelines use the artifact directly, but UC Volume provides access
+        for ad-hoc notebooks and external tools.
+      tags:
+        sdp_meta: "true"
+        purpose: wheel_upload
+      # Manual trigger by default - uncomment for scheduled automation
+      # schedule:
+      #   quartz_cron_expression: "0 0 6 * * ?"
+      #   timezone_id: America/New_York
+      #   pause_status: PAUSED
+
+      tasks:
+        - task_key: copy_to_volume
+          description: "Copy DAB-built wheel artifact to UC Volume for external access"
+          spark_python_task:
+            python_file: ${workspace.file_path}/scripts/upload_wheel_to_volume.py
+            parameters:
+              - ${workspace.root_path}/artifacts/.internal/databricks_labs_sdp_meta-0.1.0-py3-none-any.whl
+              - ${var.sdp_meta_dependency}
+          environment_key: copy_env
+
+        - task_key: onboard_specs
+          description: "Re-run onboarding to refresh dataflowspec tables with latest wheel"
+          depends_on:
+            - task_key: copy_to_volume
+          python_wheel_task:
+            package_name: databricks_labs_sdp_meta
+            entry_point: run
+            named_parameters:
+              database: ${var.uc_catalog_name}.${var.sdp_meta_schema}
+              onboarding_file_path: ${var.uc_volume_path}/conf/onboarding_all_usecases.json
+              bronze_dataflowspec_table: ${var.bronze_dataflowspec_table}
+              silver_dataflowspec_table: ${var.silver_dataflowspec_table}
+              uc_enabled: "true"
+              import_author: samson.eromonsei@databricks.com
+              version: v1
+              onboard_layer: bronze_silver
+              overwrite: "True"
+              env: ${var.env}
+          environment_key: onboard_env
+
+      environments:
+        - environment_key: copy_env
+          spec:
+            client: "1"
+            dependencies:
+              - databricks-sdk>=0.20
+              - PyYAML>=6.0
+
+        - environment_key: onboard_env
+          spec:
+            client: "1"
+            dependencies:
+              - databricks-sdk>=0.20
+              - PyYAML>=6.0
+              - ${var.sdp_meta_dependency}

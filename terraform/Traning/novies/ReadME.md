@@ -1,0 +1,12 @@
+- Best practices
+- Important points
+- Working with IAC
+- Explore IAC
+- resouces Block
+- Input Variables
+- Locals
+- Outputs
+- Workspaces
+- State Manipulations
+- Thing to aviod
+- Terraform Cloud

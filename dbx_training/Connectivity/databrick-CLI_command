@@ -1,0 +1,70 @@
+# databricks CLI for local development either globally or on specific CLI
+>> pip install databricks-cli
+
+  ## For Authentication
+    * Go to Databricks UI
+    * Go to User Settings and generate token
+    * Configure Databricks CLI using profile. Paste Databricks URL and token when prompted.
+
+    Get the token from databrick Environment
+
+   >> databricks configure --token 
+     prompts for URL :
+     prompts token : 
+
+  ## Configure Databricks CLI (Command line utility
+   cluster-policies  Utility to interact with Databricks cluster policies.
+    clusters          Utility to interact with Databricks clusters.
+    configure         Configures host and authentication info for the CLI.
+    fs                Utility to interact with DBFS.
+    groups            Utility to interact with Databricks groups.
+    instance-pools    Utility to interact with Databricks instance pools.
+    jobs              Utility to interact with jobs.
+    
+    libraries         Utility to interact with libraries.
+    pipelines         Utility to interact with Databricks Delta Live Tables
+                        Pipelines.
+    repos             Utility to interact with Repos.
+    runs              Utility to interact with the jobs runs.
+    secrets           Utility to interact with Databricks secret API.
+    stack             [Beta] Utility to deploy and download Databricks resource
+                        stacks.
+    tokens            Utility to interact with Databricks tokens.
+    unity-catalog     Utility to interact with Databricks Unity Catalog.
+    workspace         Utility to interact with the Databricks workspace.
+  )
+  
+    * Validate by running below command.
+   >> databricks fs ls --profile demo
+
+
+## Authentication Programatic  --> see Documentation    # Configure Databricks-connect
+
+
+## https://docs.databricks.com/en/dev-tools/databricks-connect/python/index.html
+## Virtual Environment setup  -> https://www.databricks.com/blog/2022/07/07/introducing-spark-connect-the-power-of-apache-spark-everywhere.html
+       >> conda create --name <virtualenv> python=version
+
+    Make sure you have setup your databrickCLI OAuth authentication
+
+    Make sure there is no spark runtime deployed to aviod any form of conflict with databrick spark runtime
+
+    Double check if pyspark is installed 
+       
+       >> pip uninstall pysaprk
+
+    ## Install databricks Connect Client base on your cluster runttime
+
+       >> pip install -U databricks-connect==(latest runtime LTS)
+
+
+    In a local Databricks configuration profile , set serverless_compute_id = auto, then reference that profile from your Databricks Connect Python code.
+
+   ## Configure connecetion properties
+
+    databricks workspaceURL -> ?
+    PAT -> ?
+    cluster ID -> ?
+    Launch ->
+    databricks-connect configure
+

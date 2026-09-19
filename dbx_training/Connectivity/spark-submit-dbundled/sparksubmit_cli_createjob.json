@@ -1,0 +1,53 @@
+{
+    "name": "Spark-submit-UI",
+    "new_cluster": {
+      "spark_version": "15.4.x-scala2.12",
+      "spark_conf": {
+        "spark.master": "local[*, 4]",
+        "spark.databricks.cluster.profile": "singleNode"
+      },
+      "aws_attributes": {
+        "first_on_demand": 1,
+        "availability": "SPOT_WITH_FALLBACK",
+        "zone_id": "us-west-2b",
+        "instance_profile_arn": "arn:aws:iam::975049886938:instance-profile/databricks-gluecatalog-s3-access",
+        "spot_bid_price_percent": 100,
+        "ebs_volume_count": 0
+      },
+      "node_type_id": "m5d.large",
+      "driver_node_type_id": "m5d.large",
+      "custom_tags": {
+        "ResourceClass": "SingleNode"
+      },
+      "spark_env_vars": {
+        "TGT_FILE_FORMAT": "json",
+        "SRC_DIR": "s3://acm-test-bucket/sandbox/",
+        "SRC_FILE_PATTERN": "2024-09-30",
+        "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
+        "SRC_FILE_FORMAT": "json",
+        "TGT_DIR": "dbfs:/mnt/landing",
+        "ENVIRON": "DATABRICKS"
+      },
+      "enable_elastic_disk": true,
+      "data_security_mode": "SINGLE_USER",
+      "runtime_engine": "PHOTON",
+      "num_workers": 1
+    },
+    "email_notifications": {
+      "no_alert_for_skipped_runs": false
+    },
+    "webhook_notifications": {},
+    "timeout_seconds": 0,
+    "spark_submit_task": {
+      "parameters": [
+        "--py-files",
+        "dbfs:/jobs/deployments/application-deployment.zip",
+        "dbfs:/jobs/deployments/app.py"
+      ]
+    },
+    "max_concurrent_runs": 1,
+    "format": "SINGLE_TASK",
+    "queue": {
+      "enabled": true
+    }
+  }

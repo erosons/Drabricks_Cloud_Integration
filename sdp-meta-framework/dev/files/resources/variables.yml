@@ -1,0 +1,72 @@
+# =============================================================================
+# Variables for SDP-META Framework + Bundle
+# =============================================================================
+
+variables:
+  # ---------------------------------------------------------------------------
+  # Unity Catalog Configuration
+  # ---------------------------------------------------------------------------
+  uc_catalog_name:
+    description: "UC catalog for all SDP-META objects"
+    default: general_use
+
+  sdp_meta_schema:
+    description: "Schema for dataflowspec tables (onboarding metadata)"
+    default: sdp_meta
+
+  bronze_schema:
+    description: "Schema for bronze layer tables"
+    default: employee_bronze
+
+  silver_schema:
+    description: "Schema for silver layer tables"
+    default: employee_silver
+
+  # ---------------------------------------------------------------------------
+  # SDP-META Wheel Dependency
+  # ---------------------------------------------------------------------------
+  # This references the artifact built from framework/setup.py.
+  # DAB auto-builds the wheel on `bundle deploy` and uploads it.
+  # The variable below is the VOLUME path for the pipeline %pip install.
+  # On deploy, the wheel_upload_job copies the artifact to this volume path.
+  # ---------------------------------------------------------------------------
+  sdp_meta_dependency:
+    description: "Path to the SDP-META wheel on UC Volume (for pipeline notebooks)"
+    default: /Volumes/general_use/platform_admin/sdp_meta_files/wheels/databricks_labs_sdp_meta-0.1.0-py3-none-any.whl
+
+  # ---------------------------------------------------------------------------
+  # UC Volume for configs, data, and wheel storage
+  # ---------------------------------------------------------------------------
+  uc_volume_schema:
+    description: "UC schema that contains the volume for configs and wheels"
+    default: platform_admin
+
+  uc_volume_name:
+    description: "UC Volume name for configs, test data, DDLs, DQE files, and wheels"
+    default: sdp_meta_files
+
+  uc_volume_path:
+    description: "UC Volume base path for configs, test data, DDLs, DQE files"
+    default: /Volumes/general_use/platform_admin/sdp_meta_files
+
+  # ---------------------------------------------------------------------------
+  # Dataflowspec Table Names
+  # ---------------------------------------------------------------------------
+  bronze_dataflowspec_table:
+    description: "Table name for bronze dataflowspec (created by onboarding)"
+    default: employee_dataflowspec_bronze
+
+  silver_dataflowspec_table:
+    description: "Table name for silver dataflowspec (created by onboarding)"
+    default: employee_dataflowspec_silver
+
+  abac_dataflowspec_table:
+    description: "Table name for the ABAC governance spec (loaded from conf/abac/securables.yaml by the onboarding job's stage_conf task)"
+    default: abac_governance_spec
+
+  # ---------------------------------------------------------------------------
+  # Environment
+  # ---------------------------------------------------------------------------
+  env:
+    description: "Environment identifier (dev/prod)"
+    default: dev

@@ -1,0 +1,10 @@
+device_id STRING,
+telemetry_type STRING,
+value STRING,
+unit STRING,
+timestamp STRING,
+device_name STRING,
+location STRING,
+status STRING,
+error_code STRING,
+sequence_number STRING

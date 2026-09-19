@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.customer.customer_ratings
+# Template: standard_pii_table
+# Review and customize column_overrides as needed.
+
+table_id: customer_ratings
+catalog: general_use
+schema: customer
+template: standard_pii_table
+description: 'Auto-discovered table: general_use.customer.customer_ratings'
+policy_bindings: []
+grants: []
+column_overrides: []

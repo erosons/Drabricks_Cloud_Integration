@@ -1,0 +1,10 @@
+device_id STRING,
+sensor_type STRING,
+reading STRING,
+unit STRING,
+timestamp STRING,
+location_lat STRING,
+location_lon STRING,
+battery_level STRING,
+firmware_version STRING,
+event_type STRING

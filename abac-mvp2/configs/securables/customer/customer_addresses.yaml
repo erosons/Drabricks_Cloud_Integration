@@ -1,0 +1,25 @@
+# Table: customer_addresses
+# Domain: customer | Template: standard_pii_table
+# Relies entirely on inherited schema/catalog policies — no table-level overrides.
+
+table_id: customer_addresses
+catalog: general_use
+schema: customer
+template: standard_pii_table
+description: "Customer mailing and billing addresses"
+
+# No additional policy_bindings — inherits from schema (regional_data_isolation,
+# pii_phone_masking) and catalog (pii_email_masking)
+policy_bindings: []
+
+# Uses template default grants
+grants: []
+
+# Only override columns that don't match template patterns
+column_overrides:
+  - name: city
+    tags: {}  # explicitly not tagged
+  - name: state
+    tags: {}  # explicitly not tagged
+  - name: country_code
+    tags: {region_identifier: ""}

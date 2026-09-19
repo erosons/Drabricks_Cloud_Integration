@@ -1,0 +1,312 @@
+# ==============================================================================
+# ABAC MVP2 — Scalable Governance Framework
+# Declarative Automation Bundle
+# ==============================================================================
+# Deploys and manages the ABAC governance framework at scale (2000+ tables):
+#   1. Test setup (100 synthetic PII tables)
+#   2. Auto-discovery of unmanaged tables
+#   3. Parallel tag application via templates
+#   4. UDF deployment
+#   5. RBAC grant provisioning
+#   6. ABAC policy creation
+#   7. Enforcement validation
+#   8. Drift detection (scheduled)
+#   9. Governance App (self-service UI)
+#
+# Usage:
+#   databricks bundle validate --target dev
+#   databricks bundle deploy --target dev
+#   databricks bundle run governance_deploy --target dev
+#   databricks bundle run governance_test_setup --target dev
+# ==============================================================================
+
+bundle:
+  name: abac_governance_mvp2
+
+variables:
+  workspace_host:
+    description: "Workspace host (auto-detected from CLI auth)"
+    default: ""
+  governance_catalog:
+    description: "Catalog where governance UDFs live"
+    default: general_use
+  governance_schema:
+    description: "Schema for policy functions"
+    default: platform_admin
+  target_catalog:
+    description: "Catalog for governed data products"
+    default: general_use
+  config_path:
+    description: "Path to configs directory"
+    default: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs
+  project_root:
+    description: "Project root path"
+    default: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2
+
+# workspace.host is auto-detected from CLI authentication
+
+# ==============================================================================
+# TARGETS
+# ==============================================================================
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      governance_catalog: dev_general_use
+      target_catalog: dev_general_use
+      config_path: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs
+      project_root: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2
+
+  staging:
+    variables:
+      governance_catalog: staging_general_use
+      target_catalog: staging_general_use
+      config_path: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs
+      project_root: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2
+
+  prod:
+    variables:
+      governance_catalog: general_use
+      target_catalog: general_use
+      config_path: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs
+      project_root: /Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2
+
+# ==============================================================================
+# RESOURCES
+# ==============================================================================
+resources:
+  jobs:
+    # =========================================================================
+    # Job 1: Deploy full governance pipeline (7-step)
+    # =========================================================================
+    governance_deploy:
+      name: "[ABAC-MVP2] Deploy Governance Framework"
+      description: |
+        Deploys the full ABAC governance framework at scale:
+        - Auto-discovers unmanaged tables from information_schema
+        - Applies governed tags using template pattern matching (parallel)
+        - Deploys masking UDFs to governance schema
+        - Grants RBAC permissions (parallel)
+        - Creates ABAC policies with MATCH COLUMNS (parallel)
+        - Validates enforcement on sample tables
+        - Runs drift detection and writes to Delta
+      tags:
+        team: platform-governance
+        framework: abac-mvp2
+        environment: ${bundle.target}
+      tasks:
+        - task_key: auto_discover
+          description: "Discover unmanaged tables and generate config stubs"
+          notebook_task:
+            notebook_path: ./src/notebooks/01b_auto_discover_tables
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: apply_governed_tags
+          description: "Apply governed tags using template patterns (parallel)"
+          depends_on:
+            - task_key: auto_discover
+          notebook_task:
+            notebook_path: ./src/notebooks/02_apply_governed_tags
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: deploy_masking_udfs
+          description: "Deploy row filter and column mask UDFs"
+          depends_on:
+            - task_key: apply_governed_tags
+          notebook_task:
+            notebook_path: ./src/notebooks/03_deploy_masking_udfs
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: grant_rbac_permissions
+          description: "Grant RBAC permissions across all tables (parallel)"
+          depends_on:
+            - task_key: deploy_masking_udfs
+          notebook_task:
+            notebook_path: ./src/notebooks/03b_grant_rbac_permissions
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: create_abac_policies
+          description: "Create ABAC policies with MATCH COLUMNS (parallel)"
+          depends_on:
+            - task_key: grant_rbac_permissions
+          notebook_task:
+            notebook_path: ./src/notebooks/04_create_abac_policies
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: validate_enforcement
+          description: "Sample-based enforcement validation"
+          depends_on:
+            - task_key: create_abac_policies
+          notebook_task:
+            notebook_path: ./src/notebooks/05_validate_enforcement
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+              sample_size: "10"
+          libraries:
+            - pypi:
+                package: pyyaml
+
+        - task_key: drift_detection
+          description: "Detect drift and write results to Delta"
+          depends_on:
+            - task_key: validate_enforcement
+          notebook_task:
+            notebook_path: ./src/notebooks/06_drift_detection
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+    # =========================================================================
+    # Job 2: Drift detection (scheduled daily)
+    # =========================================================================
+    governance_drift_check:
+      name: "[ABAC-MVP2] Governance Drift Detection"
+      description: |
+        Scheduled daily check for drift between YAML config and UC platform state.
+        Writes results to Delta tables consumed by the compliance dashboard.
+      tags:
+        team: platform-governance
+        framework: abac-mvp2
+      schedule:
+        quartz_cron_expression: "0 0 8 * * ?"  # Daily at 8 AM UTC
+        timezone_id: UTC
+      tasks:
+        - task_key: drift_detection
+          notebook_task:
+            notebook_path: ./src/notebooks/06_drift_detection
+            base_parameters:
+              config_path: ${var.config_path}
+              project_root: ${var.project_root}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+    # =========================================================================
+    # Job 3: Test setup (create 100 synthetic tables)
+    # =========================================================================
+    governance_test_setup:
+      name: "[ABAC-MVP2] Setup Test Environment (100 tables)"
+      description: |
+        Creates 100 synthetic PII tables for testing:
+        - 50 customer tables (standard_pii_table template)
+        - 30 finance tables (financial_table template)
+        - 20 hr tables (sensitive_hr_table template)
+      tags:
+        team: platform-governance
+        framework: abac-mvp2
+        purpose: testing
+      tasks:
+        - task_key: setup_test_tables
+          description: "Create 100 tables with synthetic PII data"
+          notebook_task:
+            notebook_path: ./test/00_setup_100_test_tables
+            base_parameters:
+              catalog: ${var.target_catalog}
+              drop_existing: "true"
+          libraries:
+            - pypi:
+                package: pyyaml
+
+    # =========================================================================
+    # Job 4: Teardown test environment
+    # =========================================================================
+    governance_teardown:
+      name: "[ABAC-MVP2] Teardown Test Environment"
+      description: "Removes test tables, policies, and tags for clean re-runs"
+      tags:
+        team: platform-governance
+        framework: abac-mvp2
+      tasks:
+        - task_key: teardown
+          notebook_task:
+            notebook_path: ./test/99_teardown
+            base_parameters:
+              catalog: ${var.target_catalog}
+          libraries:
+            - pypi:
+                package: pyyaml
+
+  # ===========================================================================
+  # App: ABAC Governance Manager (Gradio UI)
+  # ===========================================================================
+  apps:
+    abac_governance_manager:
+      name: "abac-governance-manager"
+      description: |
+        Self-service UI for non-technical users to manage ABAC policies:
+        - Add/remove groups from TO and EXCEPT principal lists
+        - Add/remove RBAC grants on table configurations
+        - View change audit log
+      source_code_path: ./app
+      config:
+        command:
+          - "gradio"
+          - "app.py"
+        env:
+          - name: CONFIG_PATH
+            value: ${var.config_path}
+          - name: POLICIES_FILE
+            value: ${var.config_path}/policies.yaml
+          - name: SECURABLES_DIR
+            value: ${var.config_path}/securables
+      permissions:
+        - group_name: platform_governance_admin
+          level: CAN_MANAGE
+        - group_name: data_engineering_team
+          level: CAN_USE
+
+  # ===========================================================================
+  # Schemas (Unity Catalog declarations)
+  # ===========================================================================
+  schemas:
+    governance_schema:
+      catalog_name: ${var.governance_catalog}
+      name: ${var.governance_schema}
+      comment: "ABAC governance infrastructure: UDFs, audit tables, drift results"
+
+    customer_schema:
+      catalog_name: ${var.target_catalog}
+      name: customer
+      comment: "Customer domain data products"
+
+    finance_schema:
+      catalog_name: ${var.target_catalog}
+      name: finance
+      comment: "Financial transactions and payment data"
+
+    hr_schema:
+      catalog_name: ${var.target_catalog}
+      name: hr
+      comment: "Human resources and employee data"
+
+

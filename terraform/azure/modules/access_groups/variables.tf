@@ -1,0 +1,12 @@
+variable "environment" { type = string }
+variable "exempt_groups" { type = list(string) }
+variable "structural_groups_map" { type = map(any) }
+variable "domain_tables" { type = map(list(any)) }
+variable "region_values" { type = list(string) }
+variable "entity_values" { type = list(string) }
+variable "classification_values" { type = list(string) }
+variable "pii_access_values" { type = list(string) }
+variable "financial_access_values" { type = list(string) }
+variable "pipeline_exempt_sp_name" { type = string }
+variable "dlt_pipeline_exempt_group" { type = string }
+variable "time_travel_exempt_group" { type = string }

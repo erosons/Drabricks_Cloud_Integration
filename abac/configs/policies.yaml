@@ -1,0 +1,489 @@
+# ============================================================================
+# ABAC/GBAC GOVERNANCE POLICIES
+# ============================================================================
+# This file defines POLICIES only - the enforcement rules, UDFs, groups,
+# and access controls. It does NOT define UC securables (catalogs/schemas/tables).
+# Securables are defined in securables.yaml.
+#
+# The reconciliation engine reads BOTH files:
+#   policies.yaml  -> What rules to enforce
+#   securables.yaml -> Where to enforce them (targets + tags)
+# ============================================================================
+
+api_version: governance.databricks.com/v1
+kind: PolicyRegistry
+metadata:
+  registry_id: enterprise_governance_policies
+  version: 1.0.0
+  status: approved
+  owner: platform-governance-team
+  last_reviewed: "2024-01-15"
+  description: |
+    Central policy registry defining all ABAC/GBAC enforcement rules.
+    Policies are matched to securables via governed tags and scope declarations.
+
+# ============================================================================
+# SECTION 1: GOVERNED TAG TAXONOMY
+# ============================================================================
+# Defines the allowed tag keys and values used for ABAC policy matching.
+# These tags must be created as governed tags in Unity Catalog before
+# policies can reference them.
+
+governed_tags:
+  # =========================================================================
+  # EXISTING WORKSPACE GOVERNED TAGS (do NOT create - already exist)
+  # =========================================================================
+  # These are referenced by ABAC policies in MATCH COLUMNS clauses.
+  # The framework uses them as-is from the workspace tag registry.
+
+  # --- PII Classification Tags ---
+  - key: class.email_address
+    description: "An email address conforming to RFC-822"
+    source: workspace_existing
+    used_by_policies: [mask_email_policy]
+
+  - key: class.phone_number
+    description: "A phone number pattern (area code, prefix, line number)"
+    source: workspace_existing
+    used_by_policies: [mask_phone_policy]
+
+  - key: class.date_of_birth
+    description: "Date of birth - Birth dates of individuals"
+    source: workspace_existing
+    used_by_policies: [mask_dob_policy]
+
+  - key: class.name
+    description: "A person's name (first, middle, last, titles, suffixes)"
+    source: workspace_existing
+    used_by_policies: [mask_name_policy]
+
+  - key: class.us_ssn
+    description: "A US Social Security number containing 9 digits"
+    source: workspace_existing
+    used_by_policies: [mask_ssn_policy]
+
+  - key: class.credit_card
+    description: "A credit card number containing 12-19 digits"
+    source: workspace_existing
+    used_by_policies: [mask_credit_card_policy]
+
+  - key: class.location
+    description: "A location or part of an address"
+    source: workspace_existing
+    used_by_policies: [mask_address_policy]
+
+  - key: class.ip_address
+    description: "An IPv4 or IPv6 address"
+    source: workspace_existing
+    used_by_policies: [mask_ip_policy]
+
+  - key: class.iban_code
+    description: "An International Bank Account Number (IBAN)"
+    source: workspace_existing
+    used_by_policies: [mask_iban_policy]
+
+# ============================================================================
+# SECTION 2: GROUP DEFINITIONS (GBAC)
+# ============================================================================
+# Defines the group naming conventions and privilege mappings.
+# Groups are created per data product following the naming pattern.
+
+group_templates:
+  naming_pattern: "{domain}_{product}_{role}"
+  roles:
+    reader:
+      description: "Can SELECT from the data product tables"
+      privileges:
+        - SELECT
+      requires_approval: true
+
+    editor:
+      description: "Can SELECT and MODIFY data product tables"
+      privileges:
+        - SELECT
+        - MODIFY
+      requires_approval: true
+
+    masked_reader:
+      description: "Can SELECT but sees masked sensitive columns"
+      privileges:
+        - SELECT
+      requires_approval: true
+
+    cleartext_approved:
+      description: "Approved exception to see cleartext on sensitive columns"
+      privileges:
+        - SELECT
+      requires_approval: true
+      approval_escalation: governance_team
+
+    governance_admin:
+      description: "Can manage policies and tags for this product"
+      privileges:
+        - SELECT
+        - APPLY TAG
+        - MANAGE
+      requires_approval: true
+      approval_escalation: platform_team
+
+    policy_operator:
+      description: "Can deploy and reconcile policies"
+      privileges:
+        - SELECT
+        - EXECUTE
+      requires_approval: true
+
+# ============================================================================
+# SECTION 3: UDF DEFINITIONS (Policy Functions)
+# ============================================================================
+# Defines the row filter and column mask functions.
+# These are deployed to a governance schema in UC.
+
+udf_registry:
+  target_catalog: general_use
+  target_schema: platform_admin
+
+  row_filters:
+    - function_id: filter_by_user_region
+      description: "Returns TRUE only if the user's region matches the row's region"
+      parameters:
+        - name: region_code
+          type: STRING
+      returns: BOOLEAN
+      body: |
+        RETURN
+          is_account_group_member('platform_governance_admin')
+          OR is_account_group_member(CONCAT(region_code, '_data_reader'))
+          OR region_code = CASE
+            WHEN is_account_group_member('us_data_reader') THEN 'us'
+            WHEN is_account_group_member('eu_data_reader') THEN 'eu'
+            WHEN is_account_group_member('apac_data_reader') THEN 'apac'
+            ELSE '__no_match__'
+          END;
+      deterministic: true
+      failure_mode: deny
+
+    - function_id: filter_by_department
+      description: "Returns TRUE only if the user belongs to the department group"
+      parameters:
+        - name: department
+          type: STRING
+      returns: BOOLEAN
+      body: |
+        RETURN
+          is_account_group_member('platform_governance_admin')
+          OR is_account_group_member(CONCAT(department, '_department_member'));
+      deterministic: true
+      failure_mode: deny
+
+    - function_id: filter_active_records_only
+      description: "Returns TRUE for active records, hides soft-deleted"
+      parameters:
+        - name: is_active
+          type: BOOLEAN
+      returns: BOOLEAN
+      body: |
+        RETURN
+          is_account_group_member('platform_governance_admin')
+          OR is_active = TRUE;
+      deterministic: true
+      failure_mode: deny
+
+  column_masks:
+    - function_id: mask_pii_string
+      description: "Masks string PII values, showing first and last char only"
+      parameters:
+        - name: value
+          type: STRING
+      returns: STRING
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN value
+            WHEN value IS NULL
+              THEN NULL
+            WHEN LENGTH(value) <= 2
+              THEN '***'
+            ELSE CONCAT(SUBSTRING(value, 1, 1), '***', SUBSTRING(value, LENGTH(value), 1))
+          END;
+      deterministic: true
+
+    - function_id: mask_email
+      description: "Masks email addresses preserving domain"
+      parameters:
+        - name: email_value
+          type: STRING
+      returns: STRING
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN email_value
+            WHEN email_value IS NULL
+              THEN NULL
+            WHEN INSTR(email_value, '@') > 0
+              THEN CONCAT('***@', SUBSTRING_INDEX(email_value, '@', -1))
+            ELSE '***'
+          END;
+      deterministic: true
+
+    - function_id: mask_ssn
+      description: "Masks SSN showing only last 4 digits"
+      parameters:
+        - name: ssn_value
+          type: STRING
+      returns: STRING
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN ssn_value
+            WHEN ssn_value IS NULL
+              THEN NULL
+            WHEN LENGTH(ssn_value) >= 4
+              THEN CONCAT('***-**-', RIGHT(ssn_value, 4))
+            ELSE '***-**-****'
+          END;
+      deterministic: true
+
+    - function_id: mask_phone
+      description: "Masks phone number showing only last 4 digits"
+      parameters:
+        - name: phone_value
+          type: STRING
+      returns: STRING
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN phone_value
+            WHEN phone_value IS NULL
+              THEN NULL
+            WHEN LENGTH(phone_value) >= 4
+              THEN CONCAT('(***) ***-', RIGHT(phone_value, 4))
+            ELSE '***'
+          END;
+      deterministic: true
+
+    - function_id: redact_full
+      description: "Fully redacts a column value - used for denied columns"
+      parameters:
+        - name: value
+          type: STRING
+      returns: STRING
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN value
+            ELSE '[REDACTED]'
+          END;
+      deterministic: true
+
+    - function_id: mask_numeric
+      description: "Masks numeric values to NULL for unauthorized users"
+      parameters:
+        - name: value
+          type: DOUBLE
+      returns: DOUBLE
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member('platform_governance_admin')
+              THEN value
+            ELSE NULL
+          END;
+      deterministic: true
+
+# ============================================================================
+# SECTION 4: ABAC POLICIES
+# ============================================================================
+# Defines the actual ABAC policies that get applied.
+# Each policy references:
+#   - A scope (catalog, schema, or table level)
+#   - A UDF from the udf_registry above
+#   - Principal targeting (TO / EXCEPT)
+#   - Tag matching conditions (WHEN / MATCH COLUMNS)
+#
+# The reconciliation engine maps these to UC CREATE POLICY statements.
+
+# Scope coverage:
+#   - 1 catalog-level policy  (broadest: protects all schemas/tables in catalog)
+#   - 2 schema-level policies (domain boundaries: inherits to tables in schema)
+#   - 3 table-level policies  (most targeted: single table, explicit control)
+
+policies:
+  row_filters:
+    # -------------------------------------------------------------------------
+    # SCHEMA-LEVEL: Regional data isolation (inherits to all tables in schema)
+    # -------------------------------------------------------------------------
+    - policy_id: regional_data_isolation
+      description: "Restrict rows based on user's regional group membership"
+      scope_level: schema
+      udf: filter_by_user_region
+      principals:
+        to:
+          - customer_data_editors
+          - customer_data_readers
+        except:
+          - platform_governance_admin
+          - customer_cleartext_approved
+      for_tables: true
+      when: []
+      match_columns:
+        - condition: "has_tag('region_identifier')" #custom tags
+          alias: region_code
+      using_columns:
+        - region_code
+      failure_mode: deny
+
+    # -------------------------------------------------------------------------
+    # TABLE-LEVEL: Filter soft-deleted records on customer_profile
+    # -------------------------------------------------------------------------
+    # - policy_id: active_records_only
+    #   description: "Hide soft-deleted rows - only editors/admins see inactive"
+    #   scope_level: table
+    #   udf: filter_active_records_only
+    #   principals:
+    #     to:
+    #       - customer_data_editors
+    #       - customer_data_readers
+    #     except:
+    #       - platform_governance_admin
+    #       - customer_cleartext_approved
+    #   for_tables: true
+    #   when: []
+    #   match_columns:
+    #     - condition: "has_tag('soft_delete_flag')" # custom tags
+    #       alias: active_flag
+    #   using_columns:
+    #     - active_flag
+    #   failure_mode: deny
+
+    # -------------------------------------------------------------------------
+    # TABLE-LEVEL: Department isolation on employee_records
+    # -------------------------------------------------------------------------
+    # - policy_id: department_isolation
+    #   description: "Restrict rows to user's own department on HR table"
+    #   scope_level: table
+    #   udf: filter_by_department
+    #   principals:
+    #     to:
+    #       - "`All Users`"
+    #     except:
+    #       - platform_governance_admin
+    #       - "{domain}_{product}_governance_admin"
+    #   for_tables: true
+    #   when: []
+    #   match_columns:
+    #     - condition: "has_tag('governance.domain')"
+    #       alias: dept
+    #   using_columns:
+    #     - dept
+    #   failure_mode: deny
+
+  column_masks:
+    # -------------------------------------------------------------------------
+    # CATALOG-LEVEL: Mask all email columns across entire catalog
+    # -------------------------------------------------------------------------
+    - policy_id: pii_email_masking
+      description: "Mask email columns across all tables tagged with class.email_address"
+      scope_level: catalog
+      udf: mask_email
+      principals:
+        to:
+          - customer_data_editors
+          - customer_data_readers
+        except:
+          - platform_governance_admin
+          - customer_cleartext_approved
+      for_tables: true
+      when: []
+      match_columns:
+        - condition: "has_tag('class.email_address')"
+          alias: email_col
+      on_column: email_col
+      using_columns:
+        - email_col
+      failure_mode: deny
+
+    # -------------------------------------------------------------------------
+    # SCHEMA-LEVEL: Mask phone columns in customer schema
+    # -------------------------------------------------------------------------
+    - policy_id: pii_phone_masking
+      description: "Mask phone columns in the customer domain schema"
+      scope_level: schema
+      udf: mask_phone
+      principals:
+        to:
+          - customer_data_editors
+          - customer_data_readers
+        except:
+          - platform_governance_admin
+          - customer_cleartext_approved
+      for_tables: true
+      when: []
+      match_columns:
+        - condition: "has_tag('class.phone_number')"
+          alias: phone_col
+      on_column: phone_col
+      using_columns:
+        - phone_col
+      failure_mode: deny
+
+    # -------------------------------------------------------------------------
+    # TABLE-LEVEL: Fully redact SSN on customer_profile only
+    # -------------------------------------------------------------------------
+    - policy_id: ssn_full_redaction
+      description: "Fully redact SSN to [REDACTED] on a specific table"
+      scope_level: table
+      udf: redact_full
+      principals:
+        to:
+          - customer_data_editors
+          - customer_data_readers
+        except:
+          - platform_governance_admin
+          - customer_cleartext_approved
+      for_tables: true
+      when: []
+      match_columns:
+        - condition: "has_tag('class.us_ssn')"
+          alias: ssn_col
+      on_column: ssn_col
+      using_columns:
+        - ssn_col
+      failure_mode: deny
+
+# ============================================================================
+# SECTION 5: CONTROLS & GUARDRAILS
+# ============================================================================
+
+controls:
+  deployment:
+    policy_conflict_action: block_deployment
+    missing_required_tag_action: block_publication
+    missing_function_action: block_deployment
+    stale_group_action: revoke_membership
+    allow_lower_scope_weakening: false
+
+  runtime:
+    fail_closed: true
+    multiple_row_filters_action: deny
+    multiple_column_masks_action: deny
+    missing_identity_action: deny
+
+  audit:
+    enabled: true
+    log_policy_changes: true
+    log_group_changes: true
+    log_access_requests: true
+    log_denied_access: true
+    log_deployment_results: true
+
+  reconciliation:
+    idempotent: true
+    detect_drift: true
+    revert_manual_weakening: true
+    dry_run_before_apply: true

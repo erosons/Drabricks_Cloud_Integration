@@ -1,0 +1,92 @@
+# ============================================================================
+# CATALOG & SCHEMA DEFAULTS
+# ============================================================================
+# Defines the top-level catalogs and schemas. Tables inherit policies and
+# grants from their parent schema/catalog unless explicitly overridden.
+#
+# Individual table files in subdirectories only need to specify:
+#   - table_id, catalog, schema, template, and any overrides
+# ============================================================================
+
+api_version: governance.databricks.com/v2
+kind: SecurableDefaults
+
+# ----------------------------------------------------------------------------
+# CATALOGS
+# ----------------------------------------------------------------------------
+catalogs:
+  - catalog_id: general_use
+    description: "Primary production catalog for business data products"
+    policy_bindings:
+      - pii_email_masking  # catalog-wide: masks all class.email_address columns
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, BROWSE SCHEMA]
+      - group: data_engineering_team
+        privileges: [USE CATALOG, BROWSE SCHEMA]
+
+# ----------------------------------------------------------------------------
+# SCHEMAS
+# ----------------------------------------------------------------------------
+schemas:
+  - schema_id: customer
+    catalog: general_use
+    description: "Customer domain data products"
+    policy_bindings:
+      - regional_data_isolation
+      - pii_phone_masking
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  - schema_id: finance
+    catalog: general_use
+    description: "Financial transactions and payment data"
+    policy_bindings:
+      - pii_email_masking
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+      - group: finance_data_readers
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  - schema_id: hr
+    catalog: general_use
+    description: "Human resources and employee data"
+    policy_bindings:
+      - department_isolation
+      - pii_phone_masking
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+      - group: hr_data_readers
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  - schema_id: platform_admin
+    catalog: general_use
+    description: "Governance infrastructure — UDFs, audit tables, drift results"
+    policy_bindings: []
+    grants:
+      - group: platform_governance_admin
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT, CREATE TABLE, CREATE FUNCTION]
+
+# ----------------------------------------------------------------------------
+# AUTO-DISCOVERY RULES
+# ----------------------------------------------------------------------------
+# Tables matching these patterns are auto-onboarded with the specified template
+# unless they already have an explicit config file.
+auto_discover:
+  - catalog: general_use
+    schema: customer
+    apply_template: standard_pii_table
+    exclude_tables: ["_staging_*", "_tmp_*", "_raw_*"]
+
+  - catalog: general_use
+    schema: finance
+    apply_template: financial_table
+    exclude_tables: ["_staging_*", "_tmp_*"]
+
+  - catalog: general_use
+    schema: hr
+    apply_template: sensitive_hr_table
+    exclude_tables: ["_staging_*", "_tmp_*"]

@@ -1,0 +1,137 @@
+# ============================================================================
+# TABLE TEMPLATES (Archetypes)
+# ============================================================================
+# Templates reduce repetition across 2000+ table definitions.
+# A table referencing a template inherits all its properties;
+# column_overrides and policy_binding additions are merged on top.
+#
+# Column matching uses regex patterns against column names.
+# This auto-assigns governed tags without listing every column explicitly.
+# ============================================================================
+
+api_version: governance.databricks.com/v2
+kind: TemplateRegistry
+
+templates:
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: standard_pii_table
+  # For tables with typical PII columns (email, phone, SSN, DOB, name)
+  # ---------------------------------------------------------------------------
+  standard_pii_table:
+    description: "Standard table with PII columns — auto-tags by column name pattern"
+    inherits_schema_policies: true
+    inherits_catalog_policies: true
+    column_patterns:
+      - match: "^email$|^email_address$|^user_email$|^contact_email$"
+        tags: {class.email_address: ""}
+      - match: "^phone$|^phone_number$|^mobile$|^contact_phone$|^cell_phone$"
+        tags: {class.phone_number: ""}
+      - match: "^ssn$|^social_security$|^social_security_number$"
+        tags: {class.us_ssn: ""}
+      - match: "^dob$|^date_of_birth$|^birth_date$|^birthdate$"
+        tags: {class.date_of_birth: ""}
+      - match: "^first_name$|^last_name$|^full_name$|^name$|^employee_name$"
+        tags: {class.name: ""}
+      - match: "^credit_card$|^card_number$|^cc_number$"
+        tags: {class.credit_card: ""}
+      - match: "^ip_address$|^ip_addr$|^client_ip$|^source_ip$"
+        tags: {class.ip_address: ""}
+      - match: "^iban$|^iban_code$|^bank_account$"
+        tags: {class.iban_code: ""}
+      - match: "^address$|^street_address$|^mailing_address$|^postal_code$|^zip_code$"
+        tags: {class.location: ""}
+    default_grants:
+      - role: customer_data_reader
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+      - role: customer_data_editor
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT, MODIFY]
+      - role: customer_data_cleartext_approved
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: internal_analytics_table
+  # For analytics/BI tables with minimal PII but need regional isolation
+  # ---------------------------------------------------------------------------
+  internal_analytics_table:
+    description: "Analytics table with regional isolation but minimal masking"
+    inherits_schema_policies: true
+    inherits_catalog_policies: true
+    column_patterns:
+      - match: "^email$|^email_address$"
+        tags: {class.email_address: ""}
+      - match: "^region$|^region_code$|^geo_region$"
+        tags: {region_identifier: ""}
+    default_grants:
+      - role: analytics_data_reader
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: sensitive_hr_table
+  # For HR tables with compensation, SSN, and department isolation
+  # ---------------------------------------------------------------------------
+  sensitive_hr_table:
+    description: "HR table with department isolation and full PII masking"
+    inherits_schema_policies: true
+    inherits_catalog_policies: true
+    column_patterns:
+      - match: "^email$|^email_address$|^work_email$"
+        tags: {class.email_address: ""}
+      - match: "^phone$|^phone_number$|^work_phone$"
+        tags: {class.phone_number: ""}
+      - match: "^ssn$|^social_security$"
+        tags: {class.us_ssn: ""}
+      - match: "^dob$|^date_of_birth$|^dateOfBith$"
+        tags: {class.date_of_birth: ""}
+      - match: "^full_name$|^first_name$|^last_name$|^employee_name$"
+        tags: {class.name: ""}
+      - match: "^department$|^dept$|^dept_code$"
+        tags: {governance.domain: ""}
+      - match: "^salary$|^compensation$|^bonus$|^total_comp$"
+        tags: {sensitive.compensation: ""}
+    default_policy_bindings:
+      - department_isolation
+    default_grants:
+      - role: hr_data_reader
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+      - role: hr_data_editor
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT, MODIFY]
+      - role: hr_data_cleartext_approved
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: financial_table
+  # For financial data with credit card masking and strict access
+  # ---------------------------------------------------------------------------
+  financial_table:
+    description: "Financial table with credit card masking and strict audit"
+    inherits_schema_policies: true
+    inherits_catalog_policies: true
+    column_patterns:
+      - match: "^email$|^email_address$"
+        tags: {class.email_address: ""}
+      - match: "^credit_card$|^card_number$|^cc_number$|^payment_card$"
+        tags: {class.credit_card: ""}
+      - match: "^iban$|^bank_account$|^account_number$"
+        tags: {class.iban_code: ""}
+      - match: "^full_name$|^cardholder_name$|^account_holder$"
+        tags: {class.name: ""}
+    default_grants:
+      - role: financial_data_reader
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+      - role: financial_data_editor
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT, MODIFY]
+      - role: financial_data_cleartext_approved
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]
+
+  # ---------------------------------------------------------------------------
+  # TEMPLATE: public_reference_table
+  # For non-sensitive reference/dimension tables (no masking needed)
+  # ---------------------------------------------------------------------------
+  public_reference_table:
+    description: "Non-sensitive reference table — no masking, broad read access"
+    inherits_schema_policies: false
+    inherits_catalog_policies: true
+    column_patterns: []
+    default_grants:
+      - role: public_data_reader
+        privileges: [USE CATALOG, BROWSE, USE SCHEMA, SELECT]

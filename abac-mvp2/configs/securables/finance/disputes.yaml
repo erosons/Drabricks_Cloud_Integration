@@ -1,0 +1,12 @@
+# Auto-generated config for general_use.finance.disputes
+# Template: financial_table
+# Review and customize column_overrides as needed.
+
+table_id: disputes
+catalog: general_use
+schema: finance
+template: financial_table
+description: 'Auto-discovered table: general_use.finance.disputes'
+policy_bindings: []
+grants: []
+column_overrides: []

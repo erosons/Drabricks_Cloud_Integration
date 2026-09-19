@@ -1,0 +1,11 @@
+cust_id STRING,
+fname STRING,
+lname STRING,
+mail STRING,
+addr STRING,
+city STRING,
+country STRING,
+postal STRING,
+phone STRING,
+op STRING,
+op_time STRING

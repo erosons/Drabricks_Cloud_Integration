@@ -1,0 +1,108 @@
+# ============================================================================
+# SDP-META SILVER SECURABLES — MNPI Governance
+# ============================================================================
+# Defines Unity Catalog securables for the SILVER layer of the SDP-META
+# pipeline.  Tables tagged `mnpi` at the TABLE level trigger MNPI policies
+# (defined in policies.yml).
+#
+# TWO-TIER SCOPING MODEL:
+#   1. Schema-level policy_bindings (non-empty)
+#      → Engine applies the policy ON SCHEMA — covers ALL tables in that
+#        schema.  No per-table enumeration needed.
+#   2. Schema-level policy_bindings: []
+#      → Engine iterates tables within the schema and applies each table's
+#        own policy_bindings ON TABLE.
+#
+# COLUMN DISCOVERY FOR MASKING:
+#   information_schema: true   → discover columns from
+#                                information_schema.columns at deploy time;
+#                                ALL columns are masked.
+#   information_schema: false  → `mnpi_masked_columns` MUST be declared;
+#                                engine raises an error if missing.
+#   (Not required when the table has no column masking policy.)
+#
+# GRANT MODEL (v2 — persona-keyed):
+#   Schema/table `grants:` maps a PERSONA name to a GROUP name.
+#   The persona's canonical privileges are defined once in policies.yml
+#   `grants` section.  03b_grant_rbac_permissions resolves the privilege set
+#   and routes each privilege to the correct securable level.
+#
+# POLICY PRINCIPALS:
+#   policies.yml derives TO/EXCEPT lists via {schema} templates.
+#   Use `policy_exceptions:` only when an object must deviate from that
+#   template-driven default.
+#
+# PER-SCHEMA ISOLATION:
+#   {schema} in policies.yml resolves from schema_id at deploy time.
+#   e.g. schema_id: employee_silver → employee_silver_data_readers, etc.
+# ============================================================================
+
+api_version: governance.databricks.com/v2
+kind: SecurableRegistry
+metadata:
+  registry_id: sdp_meta_silver_securables
+  version: 2.0.0
+  owner: data-platform-team
+
+# ============================================================================
+# CATALOGS
+# ============================================================================
+catalogs:
+  - catalog_id: general_use
+    description: "Primary production catalog for business data products"
+    policy_bindings: []
+    grants: []
+
+# ============================================================================
+# SCHEMAS
+# ============================================================================
+# Per-schema isolation: each schema has dedicated groups following the OKTA
+# naming convention:
+#   GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_readers
+#   GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_editors
+#   GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_mnpi_approved
+#
+# Template variables are declared per-schema (productname, company,
+# environment, application, layer) and resolved by notebook 04's generic
+# resolve_template.  Adding a new field to the schema makes it instantly
+# available as a {key} placeholder in policies.yml — no code change needed.
+
+schemas:
+  # ---------------------------------------------------------------------------
+  # SCHEMA: employee_silver  (schema-wide MNPI masking)
+  # ---------------------------------------------------------------------------
+  - schema_id: employee_silver
+    catalog: general_use
+    domain: employee_silver
+    layer: SILVER
+    productname: COMP
+    company: CLX
+    environment: DEV
+    application: DBX
+    description: "Silver-layer employee data — cleansed, enriched, business-ready"
+    policy_bindings:
+      - mnpi_column_masking
+    grants:
+      data_reader: GRP_OKTA_COMP_CLX_DEV_DBX_SILVER_data_readers
+      data_editor: GRP_OKTA_COMP_CLX_DEV_DBX_SILVER_data_editors
+    tables:
+      # ---------------------------------------------------------------
+      # TABLE: employees (silver)
+      # Cleansed + enriched employee records.  MNPI-tagged at table
+      # level.  information_schema: false → columns to mask MUST be
+      # declared in mnpi_masked_columns.
+      # Silver adds derived columns (comp_band, equity_vesting_pct)
+      # that are also MNPI-sensitive.
+      # ---------------------------------------------------------------
+      - table_id: employees
+        description: "Enriched employee records — MNPI protected"
+        tags:
+          mnpi_column_masked: ""
+        information_schema: false
+        mnpi_expiration_date: "2026-09-15T18:00:00-04:00"
+        mnpi_masked_columns:
+          - employee_id
+          - full_name
+          - email
+          - department
+          - hire_date

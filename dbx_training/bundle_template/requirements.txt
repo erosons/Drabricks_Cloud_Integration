@@ -1,0 +1,27 @@
+# =============================================================================
+# Python Dependencies
+# =============================================================================
+# These are development dependencies for local testing.
+# Databricks provides its own runtime packages.
+# =============================================================================
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Linting
+ruff>=0.1.0
+
+# PySpark (for local testing only)
+pyspark>=3.4.0
+delta-spark>=2.4.0
+
+# Data quality
+great-expectations>=0.18.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+
+# Security scanning
+detect-secrets>=1.4.0

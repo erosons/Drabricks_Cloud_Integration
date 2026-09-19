@@ -1,0 +1,14 @@
+# ABAC Governance Manager App
+# Databricks App configuration for policy principal and grant management
+
+command:
+  - "gradio"
+  - "app.py"
+
+env:
+  - name: CONFIG_PATH
+    value: "/Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs"
+  - name: POLICIES_FILE
+    value: "/Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs/policies.yaml"
+  - name: SECURABLES_DIR
+    value: "/Workspace/Users/samson.eromonsei@databricks.com/abac-mvp2/configs/securables"

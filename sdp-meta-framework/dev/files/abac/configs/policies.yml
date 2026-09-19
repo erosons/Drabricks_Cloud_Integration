@@ -1,0 +1,170 @@
+# ============================================================================
+# ABAC/GBAC GOVERNANCE POLICIES — MVP2 (Scalable Multi-File Architecture)
+# ============================================================================
+# This file defines POLICIES only — enforcement rules, UDFs, groups, and
+# access controls. Securables are now split across configs/securables/**/*.yaml
+#
+# CHANGES FROM MVP1:
+#   - Policies support dynamic principal lists (managed via the ABAC App)
+#   - Template references for consistent policy patterns
+#   - Audit log integration for compliance dashboard
+# ============================================================================
+
+api_version: governance.databricks.com/v2
+kind: PolicyRegistry
+metadata:
+  registry_id: enterprise_governance_policies
+  version: 2.0.0
+  status: approved
+  owner: platform-governance-team
+  last_reviewed: "2025-01-15"
+  description: |
+    Central policy registry defining all ABAC/GBAC enforcement rules.
+    Policies are matched to securables via governed tags and scope declarations.
+    Principal management is available via the ABAC Governance App.
+
+# ============================================================================
+# SECTION 1: GOVERNED TAG TAXONOMY
+# ============================================================================
+governed_tags:
+  - key: mnpi_row_filtered
+    description: "Material Non-Public Information — table-level classification for row filtering"
+    source: workspace_existing
+    scope: table
+    used_by_policies: [mnpi_row_filtering]
+
+  - key: mnpi_column_masked
+    description: "Material Non-Public Information — applied at TABLE level (WHEN gate) AND COLUMN level (MATCH COLUMNS target)"
+    source: workspace_existing
+    scope: table_and_column
+    used_by_policies: [mnpi_column_masking]
+    # mask_mnpi_value accepts VARIANT and returns VARIANT, so ALL column types
+    # can carry this tag.  STRING columns get '[MNPI RESTRICTED]'; all other
+    # types (DOUBLE, BOOLEAN, TIMESTAMP, LONG, etc.) get NULL.  Notebook 02
+    # tags every declared MNPI column regardless of data type.
+
+  - key: mnpi_expires
+    description: "MNPI expiration date (ISO 8601 with timezone) — policies auto-drop after this date"
+    source: workspace_existing
+    used_by_policies: []
+
+# ============================================================================
+# SECTION 2: PERMISSION EVALUATION (canonical persona -> privilege set)
+# ============================================================================
+# 03b_grant_rbac_permissions validates every grant declared in
+# bronze_securables.yml / silver_securables.yml against these definitions.
+# A declared grant whose privileges do not match its persona is an error.
+grants:
+  - group: data_reader
+    privileges: [USE CATALOG, USE SCHEMA, SELECT]
+  - group: data_editor
+    privileges: [USE CATALOG, USE SCHEMA, SELECT, MODIFY, CREATE TABLE]
+
+# ============================================================================
+# SECTION 3: UDF DEFINITIONS (Policy Functions)
+# ============================================================================
+# Both UDFs take `group_name` as a parameter — completely neutral.
+# The actual group name (e.g. `employee_silver_mnpi_approved`) is injected
+# at deploy time via `udf_bindings` in the policy section below.
+#
+# TEMPLATE VARIABLES (resolved per schema at deploy time):
+#   {domain}  — the business domain (e.g. `hr`, `finance`, `employee`)
+#   {layer}   — the medallion layer (bronze, silver, gold)
+#              {domain}_{layer} resolves to the group naming prefix.
+#              e.g. domain=hr, layer=bronze → hr_bronze_data_readers
+#
+# WHY {domain}_{layer} instead of {schema}:
+#   UC schema names sometimes already include the layer (employee_silver),
+#   sometimes not (hr, finance). Using {schema}_{layer} would produce
+#   `employee_silver_silver_data_readers` — a double-layer. {domain}_{layer}
+#   decouples the UC object name from the group naming convention.
+udf_registry:
+  target_catalog: general_use
+  target_schema: platform_admin
+
+  row_filters:
+    - function_id: filter_mnpi_access
+      description: "All-or-nothing row filter — returns TRUE only for MNPI-approved users"
+      parameters:
+        - name: group_name
+          type: STRING
+      returns: BOOLEAN
+      body: |
+        RETURN is_account_group_member(group_name);
+      deterministic: true
+      failure_mode: deny
+
+  column_masks:
+    - function_id: mask_mnpi_value
+      description: "Universal column mask — STRING gets [MNPI RESTRICTED], all other types get NULL"
+      parameters:
+        - name: value
+          type: VARIANT
+        - name: group_name
+          type: STRING
+      returns: VARIANT
+      body: |
+        RETURN
+          CASE
+            WHEN is_account_group_member(group_name)
+              THEN value
+            WHEN value IS NULL
+              THEN NULL
+            WHEN schema_of_variant(value) = 'STRING'
+              THEN '[MNPI RESTRICTED]'::VARIANT
+            ELSE NULL
+          END;
+      deterministic: true
+# ============================================================================
+# POLICIES
+# ============================================================================
+policies:
+  row_filters:
+    - policy_id: mnpi_row_filtering
+      description: "Restrict row visibility on MNPI-tagged tables to approved groups only"
+      udf: filter_mnpi_access
+      scope_level: table
+      table_tag: mnpi_row_filtered
+      principals:
+        to:
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_readers"
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_editors"
+        # NOTE: {domain}_{layer}_governance_admin is intentionally NOT listed —
+        # no such group exists in the account, and CREATE POLICY fails on a
+        # principal that does not exist. Re-add once the group is created.
+        except:
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_mnpi_approved"
+      udf_bindings:
+        group_name: "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_mnpi_approved"
+      failure_mode: deny
+
+  column_masks:
+    - policy_id: mnpi_column_masking
+      description: "Mask column values on MNPI-tagged tables for non-approved users"
+      udf: mask_mnpi_value
+      scope_level: table
+      table_tag: mnpi_column_masked
+      principals:
+        to:
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_readers"
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_data_editors"
+        # NOTE: {domain}_{layer}_governance_admin intentionally NOT listed — see above.
+        except:
+          - "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_mnpi_approved"
+      udf_bindings:
+        value: column_value
+        group_name: "GRP_OKTA_{productname}_{company}_{environment}_{application}_{layer}_mnpi_approved"
+
+# ============================================================================
+# ENGINE CONTROLS
+# ============================================================================
+controls:
+  reconciliation:
+    max_parallel_workers: 20
+    batch_size: 50
+    retry_on_failure: true
+    max_retries: 3
+  audit:
+    policy_change_log_table: abac_policy_changes
+  deployment:
+    policy_conflict_action: block_deployment

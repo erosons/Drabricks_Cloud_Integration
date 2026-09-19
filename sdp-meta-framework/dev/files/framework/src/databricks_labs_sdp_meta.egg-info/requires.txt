@@ -1,0 +1,16 @@
+setuptools<83,>=65
+databricks-sdk<1,>=0.20
+PyYAML<7,>=6.0
+
+[IT]
+typer[all]==0.6.1
+
+[dev]
+flake8==6.0
+delta-spark==3.0.0
+pytest>=7.0.0
+coverage>=7.0.0
+pyspark==3.5.5
+
+[mcp]
+mcp<2.0,>=1.0

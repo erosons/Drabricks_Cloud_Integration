@@ -1,0 +1,6 @@
+{
+  "expect": {
+    "valid_employee_id": "employee_id IS NOT NULL",
+    "valid_hire_date": "hire_date IS NOT NULL"
+  }
+}

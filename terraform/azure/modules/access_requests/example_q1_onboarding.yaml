@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────
+# access_requests/example_q1_onboarding.yaml
+#
+# Bulk access change file for SCIM group manager.
+# Submit via:
+#   python scripts/scim_group_manager.py bulk \
+#     --file access_requests/example_q1_onboarding.yaml
+#     --dry-run   (remove --dry-run to apply)
+# ─────────────────────────────────────────────
+
+changes:
+
+  # ── New hire: APAC analyst, masked PII ──────
+  - user_email: alice.tan@company.com
+    ticket_id:  JIRA-4001
+    reason:     "New hire — APAC finance analyst"
+    assign_groups:
+      - prd_finance_reader                         # structural — USE CATALOG/SCHEMA
+      - prd_finance_ledger_region_apac             # functional — row filter
+      - prd_finance_ledger_pii_masked              # functional — col mask (hashed PII)
+      - prd_finance_ledger_financial_clear         # functional — full financials
+    revoke_groups: []
+
+  # ── Promotion: APAC → global coverage ───────
+  - user_email: bob.smith@company.com
+    ticket_id:  JIRA-4022
+    reason:     "Promoted to global coverage — expand region access"
+    assign_groups:
+      - prd_finance_ledger_region_global           # promoted to global rows
+      - prd_finance_ledger_pii_clear               # now sees clear PII (approved)
+    revoke_groups:
+      - prd_finance_ledger_region_apac             # revoke old regional scope
+      - prd_finance_ledger_pii_masked              # revoke masked — now has clear
+
+  # ── Role change: analyst → risk team ────────
+  - user_email: carol.jones@company.com
+    ticket_id:  JIRA-4031
+    reason:     "Moving from finance to risk team"
+    assign_groups:
+      - prd_risk_reader                            # new domain structural
+      - prd_risk_exposure_class_confidential       # functional row filter
+      - prd_risk_exposure_financial_clear
+    revoke_groups:
+      - prd_finance_reader                         # remove old domain access
+      - prd_finance_ledger_region_emea
+      - prd_finance_ledger_pii_masked
+      - prd_finance_ledger_financial_clear
+
+  # ── Offboarding: remove all functional groups
+  - user_email: dave.wilson@company.com
+    ticket_id:  JIRA-4045
+    reason:     "Offboarding — last day 2024-03-31"
+    assign_groups: []
+    revoke_groups:
+      - prd_finance_reader
+      - prd_finance_ledger_region_amer
+      - prd_finance_ledger_pii_none
+      - prd_finance_ledger_financial_masked
